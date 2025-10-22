@@ -19,19 +19,32 @@ import jwt from "jsonwebtoken";
 import ApiResponse from "../errors/apiResponse";
 import { IdParam } from "../interfaces/helper.interface";
 import { IUserDecoded } from "../middlewares/authenticatedMiddleWare";
+import { initOnboardingService } from "./onboarding.service";
 
 const saltRounds = 13;
 
 export const createUserService = async (data: CreateUserRequest) => {
+  // Hash password
   const hashedPassword = await bcrypt.hash(data.password, saltRounds);
   data.password = hashedPassword;
 
+  // Create verification token
   const verificationToken = randomBytes(32).toString("hex");
   const userInfo = { ...data, verificationToken };
+
+  // Create user
   const newUser = await User.create(userInfo);
   await sendVerificationMail(newUser);
 
-  return new ApiResponse(200, "User Created Successfully", newUser.toJSON());
+  // Initialize onboarding for the new user
+  try {
+    await initOnboardingService({ userId: newUser._id.toString() });
+  } catch (err) {
+    console.error("Failed to initialize onboarding:", err);
+    // Optional: don’t throw here so user creation still succeeds
+  }
+
+  return new ApiResponse(201, "User Created Successfully", newUser.toJSON());
 };
 
 export const loginService = async (data: IUserLogin) => {
@@ -105,7 +118,7 @@ export const refreshService = async (data: IUserRefresh) => {
   });
 };
 export const forgotPasswordService = async (
-  data: Pick<IUserLogin, "email">,
+  data: Pick<IUserLogin, "email">
 ) => {
   const user = await User.findOne({ email: data.email });
 
@@ -147,7 +160,7 @@ export const verifyMailService = async (data: IUserVerify) => {
 
 export const reesetPasswordService = async (
   params: IUserVerify,
-  data: IUserReset,
+  data: IUserReset
 ) => {
   const user = await User.findOne({
     _id: params.id,
@@ -178,7 +191,7 @@ export const reesetPasswordService = async (
 
 export const updatePasswordService = async (
   params: IdParam,
-  data: IPasswordReset,
+  data: IPasswordReset
 ) => {
   const user = await User.findById(params.id);
   if (!user) {
@@ -199,7 +212,7 @@ export const updatePasswordService = async (
 };
 export const updateUserService = async (
   params: IdParam,
-  data: Partial<Omit<CreateUserRequest, "password" | "email">>,
+  data: Partial<Omit<CreateUserRequest, "password" | "email">>
 ) => {
   const user = await User.findByIdAndUpdate(params.id, data, { new: true });
   if (!user) {
