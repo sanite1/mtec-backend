@@ -10,39 +10,47 @@ import ApiError from "../errors/apiError";
 import User from "../models/User";
 
 export const createProductService = async (data: CreateProductRequest) => {
-  // 1️⃣ Create the product
+  const hasVariations =
+    Array.isArray(data.variations) && data.variations.length > 0;
+
+  // 1️⃣ Create product
+  const totalStock = hasVariations
+    ? data?.variations?.reduce((sum, v) => sum + (v.stock || 0), 0)
+    : data.totalStock || 0;
+
   const product = await Product.create({
     userId: data.userId,
     name: data.name,
     sku: data.sku,
     description: data.description,
-    price: data.price,
+    costPrice: hasVariations ? undefined : data.costPrice,
+    discountPrice: hasVariations ? undefined : data.discountPrice,
+    unit: data.unit,
+    price: hasVariations ? undefined : data.price,
     collection: data.collection,
     images: data.images,
-    totalStock: data.variations
-      ? data.variations.reduce((sum, v) => sum + (v.stock || 0), 0)
-      : 0,
+    totalStock,
   });
 
-  // 2️⃣ Create variations if provided
+  // 2️⃣ Create variations (if any)
   let variations: any[] = [];
-  if (data.variations && data.variations.length > 0) {
+  if (hasVariations) {
     variations = await ProductVariation.insertMany(
-      data.variations.map((v) => ({
+      data?.variations?.map((v) => ({
         ...v,
         productId: product._id,
       }))
     );
   }
 
-  // 3️⃣ Create a product history record
+  // 3️⃣ Record history
   await ProductHistory.create({
     productId: product._id,
     source: "Admin",
     activity: "added",
     qtyBefore: 0,
-    qtyChange: product.totalStock,
-    qtyAfter: product.totalStock,
+    qtyChange: totalStock,
+    qtyAfter: totalStock,
   });
 
   return new ApiResponse(201, "Product created successfully", {

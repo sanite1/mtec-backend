@@ -3,19 +3,26 @@ import { Joi, validate } from "express-validation";
 export const createProductValidation = () => {
   return validate({
     body: Joi.object({
-      userId: Joi.string().required(), // the user's ID
+      userId: Joi.string().required(),
       name: Joi.string().min(2).required(),
       sku: Joi.string().required(),
       description: Joi.string().optional(),
-      price: Joi.number().required(),
+      unit: Joi.string().required(),
       collection: Joi.string().optional(),
       images: Joi.array().items(Joi.string().uri()).optional(),
+      price: Joi.number().optional(),
+      costPrice: Joi.number().optional(),
+      discountPrice: Joi.number().optional(),
+      totalStock: Joi.number().optional(),
+      // Variations schema
       variations: Joi.array()
         .items(
           Joi.object({
             name: Joi.string().required(),
             sku: Joi.string().required(),
             price: Joi.number().required(),
+            costPrice: Joi.number().optional(),
+            discountPrice: Joi.number().optional(),
             stock: Joi.number().default(0),
           })
         )
@@ -59,6 +66,9 @@ export const updateProductValidation = () =>
       isActive: Joi.boolean().optional(),
       images: Joi.array().items(Joi.string()).optional(),
       totalStock: Joi.number().optional(),
+      unit: Joi.string().optional(),
+      costPrice: Joi.number().optional(),
+      discountPrice: Joi.number().optional(),
       variations: Joi.array()
         .items(
           Joi.object({

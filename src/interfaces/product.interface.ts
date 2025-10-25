@@ -5,10 +5,14 @@ export interface IProduct {
   name: string;
   sku: string;
   description?: string;
-  price: number;
+  // These fields are required only when no variations exist
+  price?: number;
+  costPrice?: number;
+  discountPrice?: number;
+  totalStock: number;
+  unit: string;
   collection?: string;
   images?: string[];
-  totalStock: number;
   isActive?: boolean;
 }
 
@@ -17,6 +21,8 @@ export interface IProductVariation {
   name: string;
   sku: string;
   price: number;
+  costPrice?: number;
+  discountPrice?: number;
   stock: number;
 }
 
@@ -35,13 +41,19 @@ export interface CreateProductRequest {
   name: string;
   sku: string;
   description?: string;
-  price: number;
+  price?: number;
+  costPrice?: number;
+  discountPrice?: number;
+  unit: string;
   collection?: string;
   images?: string[];
+  totalStock?: number;
   variations?: {
     name: string;
     sku: string;
     price: number;
+    costPrice?: number;
+    discountPrice?: number;
     stock: number;
   }[];
 }
