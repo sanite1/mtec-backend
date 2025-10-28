@@ -3,13 +3,16 @@ import { Types } from "mongoose";
 export interface IProduct {
   userId: Types.ObjectId;
   name: string;
+  location: string;
   sku: string;
   description?: string;
+  priceRange?: string;
   // These fields are required only when no variations exist
   price?: number;
   costPrice?: number;
   discountPrice?: number;
   totalStock: number;
+  variantsOptionGroup?: VariantsOptionGroup[];
   unit: string;
   collection?: string;
   images?: string[];
@@ -35,10 +38,22 @@ export interface IProductHistory {
   qtyAfter: number;
 }
 
+export interface OptionValue {
+  id: string;
+  value: string;
+}
+
+export interface VariantsOptionGroup {
+  id: string;
+  name: string; // e.g. "Color", "Size"
+  values: OptionValue[]; // e.g. [{ id: "1", value: "Red" }, { id: "2", value: "Blue" }]
+}
+
 // DTO for create product request
 export interface CreateProductRequest {
   userId: string;
   name: string;
+  location: string;
   sku: string;
   description?: string;
   price?: number;
@@ -48,6 +63,7 @@ export interface CreateProductRequest {
   collection?: string;
   images?: string[];
   totalStock?: number;
+  variantsOptionGroup?: VariantsOptionGroup[];
   variations?: {
     name: string;
     sku: string;

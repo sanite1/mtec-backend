@@ -3,7 +3,26 @@ import {
   IProduct,
   IProductHistory,
   IProductVariation,
+  OptionValue,
+  VariantsOptionGroup,
 } from "../interfaces/product.interface";
+
+const optionValueSchema = new Schema<OptionValue>(
+  {
+    id: { type: String, required: true },
+    value: { type: String, required: true },
+  },
+  { _id: false }
+);
+
+const variantsOptionGroupSchema = new Schema<VariantsOptionGroup>(
+  {
+    id: { type: String, required: true },
+    name: { type: String, required: true },
+    values: { type: [optionValueSchema], required: true },
+  },
+  { _id: false }
+);
 
 // ========== Product Schema ==========
 const productSchema = new Schema<IProduct>(
@@ -16,12 +35,15 @@ const productSchema = new Schema<IProduct>(
     name: { type: String, required: true, trim: true },
     sku: { type: String, required: true, unique: true, trim: true },
     description: { type: String, trim: true },
-    price: { type: Number, required: false }, // optional if variations exist
+    location: { type: String, trim: true },
+    price: { type: Number, required: false },
+    priceRange: { type: String, required: false },
     costPrice: { type: Number, required: false },
     discountPrice: { type: Number, required: false },
     unit: { type: String, required: true, trim: true },
     collection: { type: String, trim: true },
     images: [{ type: String }],
+    variantsOptionGroup: [variantsOptionGroupSchema],
     totalStock: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
   },

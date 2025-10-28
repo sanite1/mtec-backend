@@ -7,6 +7,7 @@ export const createProductValidation = () => {
       name: Joi.string().min(2).required(),
       sku: Joi.string().required(),
       description: Joi.string().optional(),
+      location: Joi.string().default("headquarters"),
       unit: Joi.string().required(),
       collection: Joi.string().optional(),
       images: Joi.array().items(Joi.string().uri()).optional(),
@@ -24,6 +25,25 @@ export const createProductValidation = () => {
             costPrice: Joi.number().optional(),
             discountPrice: Joi.number().optional(),
             stock: Joi.number().default(0),
+          })
+        )
+        .optional(),
+
+      // 🧠 Variants Option Groups array
+      variantsOptionGroup: Joi.array()
+        .items(
+          Joi.object({
+            id: Joi.string().required(),
+            name: Joi.string().required(),
+            values: Joi.array()
+              .items(
+                Joi.object({
+                  id: Joi.string().required(),
+                  value: Joi.string().required(),
+                })
+              )
+              .min(1)
+              .required(),
           })
         )
         .optional(),
@@ -52,37 +72,55 @@ export const getSingleProductValidation = () =>
       productId: Joi.string().required(),
     }),
   });
-
 export const updateProductValidation = () =>
   validate({
-    params: Joi.object({
-      productId: Joi.string().required(),
-    }),
     body: Joi.object({
-      name: Joi.string().optional(),
+      userId: Joi.string().required(),
+      name: Joi.string().min(2).required(),
+      sku: Joi.string().required(),
       description: Joi.string().optional(),
-      price: Joi.number().optional(),
+      location: Joi.string().default("headquarters"),
+      unit: Joi.string().required(),
       collection: Joi.string().optional(),
-      isActive: Joi.boolean().optional(),
-      images: Joi.array().items(Joi.string()).optional(),
-      totalStock: Joi.number().optional(),
-      unit: Joi.string().optional(),
+      images: Joi.array().items(Joi.string().uri()).optional(),
+      price: Joi.number().optional(),
       costPrice: Joi.number().optional(),
       discountPrice: Joi.number().optional(),
+      totalStock: Joi.number().optional(),
+      // Variations schema
       variations: Joi.array()
         .items(
           Joi.object({
-            _id: Joi.string().optional(), // present if updating existing variation
             name: Joi.string().required(),
             sku: Joi.string().required(),
             price: Joi.number().required(),
+            costPrice: Joi.number().optional(),
+            discountPrice: Joi.number().optional(),
             stock: Joi.number().default(0),
+          })
+        )
+        .optional(),
+
+      // 🧠 Variants Option Groups array
+      variantsOptionGroup: Joi.array()
+        .items(
+          Joi.object({
+            id: Joi.string().required(),
+            name: Joi.string().required(),
+            values: Joi.array()
+              .items(
+                Joi.object({
+                  id: Joi.string().required(),
+                  value: Joi.string().required(),
+                })
+              )
+              .min(1)
+              .required(),
           })
         )
         .optional(),
     }),
   });
-
 export const deleteProductValidation = () =>
   validate({
     params: Joi.object({

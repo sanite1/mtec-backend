@@ -15,19 +15,50 @@ export const createProductService = async (data: CreateProductRequest) => {
 
   // 1️⃣ Create product
   const totalStock = hasVariations
-    ? data?.variations?.reduce((sum, v) => sum + (v.stock || 0), 0)
+    ? data?.variations?.reduce(
+        (sum, v) => Number(sum) + (Number(v.stock) || 0),
+        0
+      )
     : data.totalStock || 0;
+
+  let priceValue: number | { min: number; max: number } | undefined =
+    data.price;
+
+  if (hasVariations) {
+    const prices = data?.variations
+      ?.map((v) => Number(v.price))
+      .filter((p) => !isNaN(p));
+
+    if (prices?.length && prices?.length > 0) {
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      priceValue = min === max ? min : { min, max };
+    } else {
+      priceValue = undefined;
+    }
+  }
+
+  let priceRange: any;
+  if (typeof priceValue === "object" && priceValue !== null) {
+    // You can safely access min and max here
+    priceRange = `${priceValue.min} - ${priceValue.max}`;
+  } else if (typeof priceValue === "number") {
+    priceRange = `${priceValue}`;
+  }
 
   const product = await Product.create({
     userId: data.userId,
     name: data.name,
     sku: data.sku,
     description: data.description,
+    location: data.location,
     costPrice: hasVariations ? undefined : data.costPrice,
     discountPrice: hasVariations ? undefined : data.discountPrice,
     unit: data.unit,
     price: hasVariations ? undefined : data.price,
+    ...(priceRange !== undefined && { priceRange }),
     collection: data.collection,
+    variantsOptionGroup: data.variantsOptionGroup,
     images: data.images,
     totalStock,
   });
@@ -121,95 +152,187 @@ export const getSingleProductService = async (
 
 export const updateProductService = async (
   productId: string,
-  updateData: any
+  updateData: CreateProductRequest | any
 ) => {
-  // 1️⃣ Find product
+  // 1️⃣ Find existing product
   const product = await Product.findById(productId);
-  if (!product) {
-    throw new ApiError(404, "Product not found");
-  }
+  if (!product) throw new ApiError(404, "Product not found");
 
-  // 2️⃣ Update main product fields
-  const allowedFields = [
-    "name",
-    "description",
-    "price",
-    "collection",
-    "isActive",
-    "images",
-  ];
+  // Snapshot previous totalStock for history entry later
+  const prevTotalStock = product.totalStock || 0;
 
-  for (const key of allowedFields) {
-    if (key in updateData) {
-      (product as any)[key] = updateData[key];
+  // Determine whether incoming payload has variations
+  const hasVariations =
+    Array.isArray(updateData.variations) && updateData.variations.length > 0;
+
+  // Compute new totalStock
+  const newTotalStock = hasVariations
+    ? updateData.variations.reduce(
+        (sum: number, v: any) => sum + (Number(v.stock) || 0),
+        0
+      )
+    : typeof updateData.totalStock !== "undefined"
+      ? Number(updateData.totalStock)
+      : product.totalStock;
+
+  // Compute priceValue / priceRange (same logic as create)
+  let priceValue: number | { min: number; max: number } | undefined =
+    updateData.price ?? product.price;
+
+  if (hasVariations) {
+    const prices = (updateData?.variations ?? [])
+      .map((v: any) => Number(v.price))
+      .filter((p: number) => !isNaN(p));
+
+    if (prices.length > 0) {
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      priceValue = min === max ? min : { min, max };
+    } else {
+      priceValue = undefined;
     }
   }
 
-  // 3️⃣ Handle variations update (if any)
-  let updatedVariations: any = [];
-  if (updateData.variations && updateData.variations.length > 0) {
-    const existingVariations = await ProductVariation.find({
+  let priceRange: string | undefined;
+  if (typeof priceValue === "object" && priceValue !== null) {
+    priceRange = `${priceValue.min} - ${priceValue.max}`;
+  } else if (typeof priceValue === "number") {
+    priceRange = `${priceValue}`;
+  }
+
+  // Build product update payload (only allowed/expected fields)
+  const updateFields: any = {};
+
+  const allowedScalars = [
+    "name",
+    "description",
+    "location",
+    "unit",
+    "collection",
+    "images",
+    "isActive",
+  ];
+
+  for (const key of allowedScalars) {
+    if (key in updateData) updateFields[key] = updateData[key];
+  }
+
+  // Pricing & stock handling depending on variations
+  if (hasVariations) {
+    // When variations exist, product-level price/cost/discount should be unset
+    updateFields.price = undefined;
+    updateFields.costPrice = undefined;
+    updateFields.discountPrice = undefined;
+    if (priceRange !== undefined) updateFields.priceRange = priceRange;
+    else updateFields.priceRange = undefined;
+  } else {
+    // No variations -> accept top level price/cost/discount if present in payload
+    if ("price" in updateData) updateFields.price = updateData.price;
+    if ("costPrice" in updateData)
+      updateFields.costPrice = updateData.costPrice;
+    if ("discountPrice" in updateData)
+      updateFields.discountPrice = updateData.discountPrice;
+    // Remove priceRange for non-variation product
+    updateFields.priceRange = undefined;
+  }
+
+  // totalStock always set to newTotalStock
+  updateFields.totalStock = newTotalStock;
+
+  // variantsOptionGroup can be updated directly
+  if ("variantsOptionGroup" in updateData) {
+    updateFields.variantsOptionGroup = updateData.variantsOptionGroup;
+  }
+
+  // Begin transaction when doing destructive modification (variations)
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 2️⃣ If hasVariations, delete existing variations and recreate
+    let createdVariations: any[] = [];
+    if (hasVariations) {
+      // Remove all existing variations for this product
+      await ProductVariation.deleteMany({ productId: product._id }).session(
+        session
+      );
+
+      // Insert new variations (map productId)
+      if (updateData.variations && updateData.variations.length > 0) {
+        const mapped = updateData.variations.map((v: any) => ({
+          ...v,
+          productId: product._id,
+        }));
+
+        createdVariations = await ProductVariation.insertMany(mapped, {
+          session,
+        });
+      }
+    } else {
+      // If payload has no variations and product previously had variations, delete them
+      if (!hasVariations) {
+        await ProductVariation.deleteMany({ productId: product._id }).session(
+          session
+        );
+      }
+    }
+
+    // 3️⃣ Apply product updates and save
+    // Merge updateFields into product doc
+    Object.keys(updateFields).forEach((k) => {
+      // If explicitly undefined, unset field in doc
+      if (typeof updateFields[k] === "undefined") {
+        // Use delete so mongoose will unset on save
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete (product as any)[k];
+      } else {
+        (product as any)[k] = updateFields[k];
+      }
+    });
+
+    await product.save({ session });
+
+    // 4️⃣ Create a history record if totalStock changed
+    const qtyBefore = prevTotalStock;
+    const qtyAfter = newTotalStock;
+    const qtyChange = qtyAfter - qtyBefore;
+
+    if (qtyChange !== 0) {
+      const activity: "added" | "removed" = qtyChange > 0 ? "added" : "removed";
+
+      await ProductHistory.create(
+        [
+          {
+            productId: product._id,
+            source: updateData.source || "Admin",
+            activity,
+            qtyBefore,
+            qtyChange: Math.abs(qtyChange),
+            qtyAfter,
+          },
+        ],
+        { session }
+      );
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // 5️⃣ Return latest product and variations
+    const finalProduct = await Product.findById(product._id);
+    const finalVariations = await ProductVariation.find({
       productId: product._id,
     });
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      for (const variation of updateData.variations) {
-        if (variation._id) {
-          // Update existing variation
-          await ProductVariation.findByIdAndUpdate(
-            variation._id,
-            {
-              name: variation.name,
-              sku: variation.sku,
-              price: variation.price,
-              stock: variation.stock,
-            },
-            { new: true, session }
-          );
-        } else {
-          // Create new variation
-          const newVar = await ProductVariation.create(
-            [{ ...variation, productId: product._id }],
-            { session }
-          );
-          updatedVariations.push(newVar[0]);
-        }
-      }
-
-      // recalc totalStock
-      const allVariations = await ProductVariation.find({
-        productId: product._id,
-      });
-      product.totalStock = allVariations.reduce(
-        (sum, v) => sum + (v.stock || 0),
-        0
-      );
-
-      await product.save({ session });
-      await session.commitTransaction();
-      session.endSession();
-
-      updatedVariations = await ProductVariation.find({ productId });
-    } catch (err) {
-      await session.abortTransaction();
-      session.endSession();
-      throw err;
-    }
-  } else {
-    await product.save();
+    return new ApiResponse(200, "Product updated successfully", {
+      product: finalProduct,
+      variations: finalVariations,
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    throw err;
   }
-
-  // 4️⃣ Return updated data
-  return new ApiResponse(200, "Product updated successfully", {
-    product,
-    variations:
-      updatedVariations.length > 0
-        ? updatedVariations
-        : await ProductVariation.find({ productId }),
-  });
 };
 
 export const deleteProductService = async (productId: string) => {
@@ -257,50 +380,94 @@ export const adjustProductQuantityService = async (
     const product = await Product.findById(productId).session(session);
     if (!product) throw new ApiError(404, "Product not found");
 
-    // 2️⃣ Ensure variation exists
-    if (!variationId)
-      throw new ApiError(
-        400,
-        "Please specify a variationId to adjust quantity"
-      );
-
-    const variation =
-      await ProductVariation.findById(variationId).session(session);
-    if (!variation) throw new ApiError(404, "Product variation not found");
-
-    // 3️⃣ Get total stock before adjustment
-    const allVariationsBefore = await ProductVariation.find({
-      productId: product._id,
-    }).session(session);
-    const qtyBefore = allVariationsBefore.reduce((sum, v) => sum + v.stock, 0);
-
-    // 4️⃣ Determine adjustment
+    // 2️⃣ Calculate adjustment amount
     let adjustment = 0;
     if (type === "added") adjustment = quantity;
     else if (type === "removed") adjustment = -quantity;
     else if (type === "returned") adjustment = quantity;
+    else throw new ApiError(400, "Invalid quantity adjustment type");
 
-    // 5️⃣ Update the specific variation stock
-    variation.stock = Math.max(0, variation.stock + adjustment);
-    await variation.save({ session });
+    // --- Case 1: Product has variations ---
+    // if (product?.variantsOptionGroup?.length === 0) {
+    //   if (!variationId)
+    //     throw new ApiError(400, "Variation ID required for this product");
 
-    // 6️⃣ Recalculate total product stock after change
-    const allVariationsAfter = await ProductVariation.find({
-      productId: product._id,
-    }).session(session);
+    //   const variation =
+    //     await ProductVariation.findById(variationId).session(session);
+    //   if (!variation) throw new ApiError(404, "Product variation not found");
 
-    const qtyAfter = allVariationsAfter.reduce((sum, v) => sum + v.stock, 0);
+    //   // Get total stock before change
+    //   const allVariationsBefore = await ProductVariation.find({
+    //     productId: product._id,
+    //   }).session(session);
+    //   const qtyBefore = allVariationsBefore.reduce(
+    //     (sum, v) => sum + v.stock,
+    //     0
+    //   );
+
+    //   // Apply change to variation
+    //   variation.stock = Math.max(0, variation.stock + adjustment);
+    //   await variation.save({ session });
+
+    //   // Get total stock after change
+    //   const allVariationsAfter = await ProductVariation.find({
+    //     productId: product._id,
+    //   }).session(session);
+    //   const qtyAfter = allVariationsAfter.reduce((sum, v) => sum + v.stock, 0);
+
+    //   // Update total stock
+    //   product.totalStock = qtyAfter;
+    //   await product.save({ session });
+
+    //   // Log in history
+    //   await ProductHistory.create(
+    //     [
+    //       {
+    //         productId: product._id,
+    //         variationId,
+    //         source,
+    //         activity: type,
+    //         qtyBefore,
+    //         qtyChange: quantity,
+    //         qtyAfter,
+    //       },
+    //     ],
+    //     { session }
+    //   );
+
+    //   await session.commitTransaction();
+    //   session.endSession();
+
+    //   return new ApiResponse(
+    //     200,
+    //     "Product variation quantity updated successfully",
+    //     {
+    //       productId: product._id,
+    //       variationId,
+    //       activity: type,
+    //       source,
+    //       qtyBefore,
+    //       qtyChange: quantity,
+    //       qtyAfter,
+    //       totalStock: qtyAfter,
+    //     }
+    //   );
+    // }
+
+    // --- Case 2: Product has no variations ---
+    const qtyBefore = product.totalStock || 0;
+    const qtyAfter = Math.max(0, qtyBefore + adjustment);
 
     product.totalStock = qtyAfter;
     await product.save({ session });
 
-    // 7️⃣ Log in ProductHistory
+    // Log in history
     await ProductHistory.create(
       [
         {
           productId: product._id,
           source,
-          activity: type, // "added" | "removed" | "returned"
+          activity: type,
           qtyBefore,
           qtyChange: quantity,
           qtyAfter,
@@ -312,10 +479,8 @@ export const adjustProductQuantityService = async (
     await session.commitTransaction();
     session.endSession();
 
-    // ✅ Response
     return new ApiResponse(200, "Product quantity updated successfully", {
       productId: product._id,
-      variationId: variation._id,
       activity: type,
       source,
       qtyBefore,
