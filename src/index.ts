@@ -8,6 +8,7 @@ import ApiError from "./errors/apiError";
 import userRoutes from "./routes/user.routes";
 import onboardingRoutes from "./routes/onboarding.route";
 import productRoutes from "./routes/product.routes";
+import orderRoutes from "./routes/order.routes";
 
 const PORT = 4000;
 
@@ -26,6 +27,7 @@ connectDb();
 app.use("/api/users", userRoutes);
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/product", productRoutes);
+app.use("/api/order", orderRoutes);
 
 app.listen(PORT, () => {
   console.log("Server Listening on port 4000...");

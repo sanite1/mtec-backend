@@ -36,6 +36,8 @@ export interface IProductHistory {
   qtyBefore: number;
   qtyChange: number;
   qtyAfter: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface OptionValue {
