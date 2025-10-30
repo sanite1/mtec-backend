@@ -9,6 +9,7 @@ import userRoutes from "./routes/user.routes";
 import onboardingRoutes from "./routes/onboarding.route";
 import productRoutes from "./routes/product.routes";
 import orderRoutes from "./routes/order.routes";
+import customersRoutes from "./routes/customer.route";
 
 const PORT = 4000;
 
@@ -28,6 +29,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/product", productRoutes);
 app.use("/api/order", orderRoutes);
+app.use("/api/customer", customersRoutes);
 
 app.listen(PORT, () => {
   console.log("Server Listening on port 4000...");
