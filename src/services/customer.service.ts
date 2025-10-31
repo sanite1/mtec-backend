@@ -2,11 +2,13 @@ import ApiError from "../errors/apiError";
 import ApiResponse from "../errors/apiResponse";
 import {
   CreateCustomerRequest,
+  GetCustomerOrdersParams,
   GetCustomersParams,
   UpdateNewsletterParams,
 } from "../interfaces/customer.interface";
 import User from "../models/User";
 import Customer from "../models/customer";
+import Order from "../models/order";
 
 export const createCustomerService = async (data: CreateCustomerRequest) => {
   try {
@@ -229,4 +231,103 @@ export const updateNewsletterService = async ({
     `Customer newsletter subscription updated`,
     customer
   );
+};
+
+export const getCustomerOrdersService = async ({
+  customerId,
+  userId,
+  page = 1,
+  limit = 20,
+  search,
+  startDate,
+  endDate,
+}: GetCustomerOrdersParams) => {
+  const customer = await Customer.findOne({
+    _id: customerId,
+    userId,
+  });
+
+  if (!customer) {
+    throw new ApiError(404, "Customer not found or unauthorized");
+  }
+
+  const currentPage = Number(page) || 1;
+  const perPage = Number(limit) || 20;
+
+  const filters: any = { customerId, userId };
+
+  // 🔍 Search by orderNumber or shipping name
+  if (search) {
+    filters.$or = [
+      { orderNumber: { $regex: search, $options: "i" } },
+      { "shippingAddress.fullName": { $regex: search, $options: "i" } },
+    ];
+  }
+
+  if (startDate && endDate) {
+    filters.createdAt = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    };
+  }
+
+  const skip = (currentPage - 1) * perPage;
+
+  const [orders, total] = await Promise.all([
+    Order.find(filters).sort({ createdAt: -1 }).skip(skip).limit(perPage),
+
+    Order.countDocuments(filters),
+  ]);
+
+  return new ApiResponse(200, "Customer orders retrieved successfully", {
+    total,
+    currentPage,
+    totalPages: Math.ceil(total / perPage),
+    orders,
+  });
+};
+
+export const getCustomerStatsService = async (userId: string) => {
+  // ✅ Ensure store owner exists
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  // 📊 Count customers
+  const totalCustomers = await Customer.countDocuments({ userId });
+
+  const newsletterSubscribers = await Customer.countDocuments({
+    userId,
+    newsletterSubscribed: true,
+  });
+
+  // 📅 New customers this month
+  const startOfMonth = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1
+  );
+
+  const newCustomersThisMonth = await Customer.countDocuments({
+    userId,
+    createdAt: { $gte: startOfMonth },
+  });
+
+  const recentCustomers = await Customer.find({ userId })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .select("firstName lastName email createdAt");
+
+  // 📈 Newsletter subscription rate
+  const subscriptionRate =
+    totalCustomers > 0
+      ? ((newsletterSubscribers / totalCustomers) * 100).toFixed(2)
+      : "0.00";
+
+  return new ApiResponse(200, "Customer stats fetched successfully", {
+    totalCustomers,
+    newsletterSubscribers,
+    subscriptionRate,
+    newCustomersThisMonth,
+    recentCustomers,
+  });
 };

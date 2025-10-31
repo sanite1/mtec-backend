@@ -119,8 +119,6 @@ export const deleteCustomerValidation = () =>
   validate({
     params: Joi.object({
       id: Joi.string().required(),
-    }),
-    body: Joi.object({
       userId: Joi.string().required(),
     }),
   });
@@ -134,5 +132,27 @@ export const updateNewsletterValidation = () =>
     body: Joi.object({
       userId: Joi.string().required(), // store owner ID
       newsletterSubscribed: Joi.boolean().required(),
+    }),
+  });
+
+export const getCustomerOrdersValidation = () =>
+  validate({
+    params: Joi.object({
+      id: Joi.string().required(), // customerId
+      userId: Joi.string().required(), // store owner ID
+    }),
+    query: Joi.object({
+      page: Joi.number().integer().min(1).optional(),
+      limit: Joi.number().integer().min(1).max(100).optional(),
+      search: Joi.string().optional(),
+      startDate: Joi.date().optional(),
+      endDate: Joi.date().optional(),
+    }),
+  });
+
+export const getCustomerStatsValidation = () =>
+  validate({
+    params: Joi.object({
+      userId: Joi.string().required(),
     }),
   });

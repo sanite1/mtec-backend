@@ -4,6 +4,8 @@ import {
   createCustomerService,
   deleteCustomerService,
   getCustomerByIdService,
+  getCustomerOrdersService,
+  getCustomerStatsService,
   getCustomersService,
   updateCustomerService,
   updateNewsletterService,
@@ -81,8 +83,7 @@ export const deleteCustomer = async (
   next: NextFunction
 ) => {
   try {
-    const { id } = req.params;
-    const { userId } = req.body; // From auth middleware
+    const { id, userId } = req.params;
 
     const response = await deleteCustomerService({
       customerId: id,
@@ -111,6 +112,47 @@ export const updateNewsletter = async (
     });
 
     return res.status(response.statusCode).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCustomerOrders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id, userId } = req.params;
+    const { page, limit, search, startDate, endDate } = req.query;
+
+    const response = await getCustomerOrdersService({
+      customerId: id,
+      userId: userId as string,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      search: search as string,
+      startDate: startDate as string,
+      endDate: endDate as string,
+    });
+
+    return res.status(response.statusCode).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCustomerStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+
+    const response = await getCustomerStatsService(userId);
+
+    res.status(response.statusCode).json(response);
   } catch (error) {
     next(error);
   }

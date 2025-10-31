@@ -44,3 +44,13 @@ export interface UpdateNewsletterParams {
   userId: string;
   newsletterSubscribed: boolean;
 }
+
+export interface GetCustomerOrdersParams {
+  customerId: string;
+  userId: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+}

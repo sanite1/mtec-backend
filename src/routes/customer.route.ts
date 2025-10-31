@@ -4,6 +4,8 @@ import {
   createCustomer,
   deleteCustomer,
   getCustomerById,
+  getCustomerOrders,
+  getCustomerStats,
   getCustomers,
   updateCustomer,
   updateNewsletter,
@@ -12,6 +14,8 @@ import {
   createCustomerValidation,
   deleteCustomerValidation,
   getCustomerByIdValidation,
+  getCustomerOrdersValidation,
+  getCustomerStatsValidation,
   getCustomersValidation,
   updateCustomerValidation,
   updateNewsletterValidation,
@@ -30,11 +34,21 @@ router
 router
   .route("/:id")
   .get(isAuthenticated, getCustomerByIdValidation(), getCustomerById)
-  .patch(isAuthenticated, updateCustomerValidation(), updateCustomer)
+  .patch(isAuthenticated, updateCustomerValidation(), updateCustomer);
+
+router
+  .route("/:id/:userId")
   .delete(isAuthenticated, deleteCustomerValidation(), deleteCustomer);
 
 router
   .route("/:id/newsletter")
   .patch(isAuthenticated, updateNewsletterValidation(), updateNewsletter);
 
+router
+  .route("/:id/orders/:userId")
+  .get(isAuthenticated, getCustomerOrdersValidation(), getCustomerOrders);
+
+router
+  .route("/stats/:userId")
+  .get(isAuthenticated, getCustomerStatsValidation(), getCustomerStats);
 export default router;
