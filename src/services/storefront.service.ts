@@ -20,3 +20,17 @@ export const getStorefrontService = async (userId: string) => {
     storefront
   );
 };
+
+export const updateStorefrontService = async (userId: string, data: any) => {
+  const updated = await Storefront.findOneAndUpdate(
+    { userId },
+    { $set: data },
+    { new: true, upsert: true }
+  );
+
+  return new ApiResponse(
+    200,
+    "Storefront Settings Updated Successfully",
+    updated
+  );
+};

@@ -1,9 +1,11 @@
+import { Types } from "mongoose";
+
 export interface Storefront {
   _id?: string;
-  userId: string;
+  userId: Types.ObjectId;
   theme?: string;
 
-  banner?: { title?: string; image?: string };
+  banner?: { title?: string; subtext?: string; image?: string };
   about?: { title?: string; content?: string };
   contact?: { email?: string; phone?: string; address?: string };
   location?: { address?: string };
