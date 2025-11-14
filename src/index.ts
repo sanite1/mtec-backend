@@ -14,6 +14,7 @@ import storefrontRoutes from "./routes/storefront.routes";
 import shippingRoutes from "./routes/shipping.route";
 import taxesRoutes from "./routes/taxes.routes";
 import locationRoutes from "./routes/location.routes";
+import discountRoutes from "./routes/discount.routes";
 
 const PORT = 4000;
 
@@ -38,6 +39,7 @@ app.use("/api/storefront", storefrontRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/taxes", taxesRoutes);
 app.use("/api/location", locationRoutes);
+app.use("/api/discount", discountRoutes);
 
 app.listen(PORT, () => {
   console.log("Server Listening on port 4000...");

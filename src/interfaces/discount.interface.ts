@@ -1,18 +1,20 @@
 import { Types } from "mongoose";
 
-export interface ILocation {
+export interface IDiscount {
   userId: Types.ObjectId;
-  name: string;
-  description?: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
+  description: string;
+  discountName: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  startDate: string;
+  endDate: string;
+  location: string;
+  products: [string];
 }
 
-export interface CreateLocationRequest extends ILocation {}
+export interface CreateDiscountRequest extends IDiscount {}
 
-export interface GetLocationParams {
+export interface GetDiscountParams {
   userId: string;
   page?: number;
   limit?: number;
@@ -21,11 +23,13 @@ export interface GetLocationParams {
   endDate?: string;
 }
 
-export interface UpdateLocationRequest {
-  name?: string;
+export interface UpdateDiscountRequest {
   description?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
+  discountName?: string;
+  discountType?: "percentage" | "fixed";
+  discountValue?: number;
+  startDate?: string;
+  endDate?: string;
+  location?: string;
+  products?: [string];
 }
