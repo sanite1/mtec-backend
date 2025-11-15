@@ -41,6 +41,7 @@ export const updateDiscountValidation = () =>
       discountType: Joi.string().valid("percentage", "fixed").optional(),
       discountValue: Joi.number().optional(),
       startDate: Joi.date().optional(),
+      location: Joi.string().optional(),
       endDate: Joi.date().optional(),
       products: Joi.array().items(Joi.string()).optional(),
     }),
