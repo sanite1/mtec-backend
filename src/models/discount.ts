@@ -18,9 +18,13 @@ const discountSchema = new Schema<IDiscount>(
     location: { type: String, required: true, trim: true },
     products: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "Product",
-        required: true,
+        productId: {
+          type: Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        name: { type: String, required: true },
+        price: { type: Number, required: true },
       },
     ],
   },

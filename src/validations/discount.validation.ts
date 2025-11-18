@@ -25,7 +25,16 @@ export const createDiscountValidation = () =>
       startDate: Joi.date().required(),
       endDate: Joi.date().required(),
       location: Joi.string().required(),
-      products: Joi.array().items(Joi.string()).optional(),
+      products: Joi.array()
+        .items(
+          Joi.object({
+            productId: Joi.string().required(),
+            name: Joi.string().required(),
+            price: Joi.number().required(),
+            // products: Joi.array().items(Joi.string()).optional(),
+          })
+        )
+        .optional(),
     }),
   });
 
@@ -43,7 +52,16 @@ export const updateDiscountValidation = () =>
       startDate: Joi.date().optional(),
       location: Joi.string().optional(),
       endDate: Joi.date().optional(),
-      products: Joi.array().items(Joi.string()).optional(),
+      products: Joi.array()
+        .items(
+          Joi.object({
+            productId: Joi.string().required(),
+            name: Joi.string().required(),
+            price: Joi.number().required(),
+            // products: Joi.array().items(Joi.string()).optional(),
+          })
+        )
+        .optional(),
     }),
   });
 
