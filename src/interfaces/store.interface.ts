@@ -1,19 +1,34 @@
 import { Types } from "mongoose";
 
-export interface StoreAddress {
+export interface IStoreDetails {
+  userId: Types.ObjectId; // Owner of the store
+  logoUrl?: string; // string upload URL
   country: string;
   state: string;
   zipCode: string;
   streetAddress: string;
-}
-
-export interface StoreContact {
   businessEmail: string;
   businessPhone: string;
   website?: string;
+  storeName: string;
+  businessName: string;
+  businessSector: string;
+  tagline?: string;
+  storeDescription: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export interface StoreInformation {
+export interface IStoreCreate {
+  userId: string; // Owner of the store
+  logoUrl?: string; // string upload URL
+  country: string;
+  state: string;
+  zipCode: string;
+  streetAddress: string;
+  businessEmail: string;
+  businessPhone: string;
+  website?: string;
   storeName: string;
   businessName: string;
   businessSector: string;
@@ -21,28 +36,19 @@ export interface StoreInformation {
   storeDescription: string;
 }
 
-export interface IStoreDetails {
-  userId: Types.ObjectId; // Owner of the store
-  logoUrl?: string; // File upload URL
-  storeInfo: StoreInformation; // Store information section
-  contactInfo: StoreContact; // Contact section
-  address: StoreAddress; // Address section
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface IStoreCreate {
-  userId: Types.ObjectId; // Owner of the store
-  logoUrl?: string; // File upload URL
-  storeInfo: StoreInformation; // Store information section
-  contactInfo: StoreContact; // Contact section
-  address: StoreAddress; // Address section
-}
-
 export interface IStoreUpdate {
-  userId: Types.ObjectId; // Owner of the store
-  logoUrl?: string; // File upload URL
-  storeInfo: StoreInformation; // Store information section
-  contactInfo: StoreContact; // Contact section
-  address: StoreAddress; // Address section
+  userId: string; // Owner of the store
+  logoUrl?: string; // string upload URL
+  country: string;
+  state: string;
+  zipCode: string;
+  streetAddress: string;
+  businessEmail: string;
+  businessPhone: string;
+  website?: string;
+  storeName: string;
+  businessName: string;
+  businessSector: string;
+  tagline?: string;
+  storeDescription: string;
 }

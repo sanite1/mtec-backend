@@ -12,23 +12,28 @@ import {
   getStoreById,
   updateStore,
 } from "../controllers/store.controller";
+import { upload } from "../config/upload";
 
 const router = Router();
 
-// ===============================
-// GET STORE DETAILS BY ID
-// GET /api/store-details/:id
-// ===============================
 router
   .route("/:id")
   .get(isAuthenticated, getStoreByIdValidation(), getStoreById)
-  .patch(isAuthenticated, updateStoreValidation(), updateStore)
+  .patch(
+    isAuthenticated,
+    upload.fields([{ name: "logoUrl", maxCount: 1 }]),
+    updateStoreValidation(),
+    updateStore
+  )
   .delete(isAuthenticated, deleteStoreValidation(), deleteStore);
 
-// ===============================
-// CREATE STORE DETAILS
-// POST /api/store-details
-// ===============================
-router.route("/").post(isAuthenticated, createStoreValidation(), createStore);
+router
+  .route("/")
+  .post(
+    isAuthenticated,
+    upload.fields([{ name: "logoUrl", maxCount: 1 }]),
+    createStoreValidation(),
+    createStore
+  );
 
 export default router;

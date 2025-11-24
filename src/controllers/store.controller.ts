@@ -7,6 +7,7 @@ import {
   updateStoreService,
 } from "../services/store.service";
 import { IStoreDetails } from "../interfaces/store.interface";
+import { cloudinaryImageUpload } from "../services/cloudinary.service";
 
 // ===============================
 // GET STORE DETAILS BY ID
@@ -36,6 +37,22 @@ export const createStore = async (
   next: NextFunction
 ) => {
   try {
+    // Ensure req.files is correctly typed and logoUrl exists
+    const files = req.files as
+      | { [fieldname: string]: Express.Multer.File[] }
+      | undefined;
+
+    if (files && files.logoUrl) {
+      const logoUrl = files.logoUrl[0]; // Get the first uploaded file
+
+      if (logoUrl) {
+        const logoUrlResult = await cloudinaryImageUpload(
+          logoUrl.buffer,
+          "MTEC_Users"
+        );
+        req.body.logoUrl = logoUrlResult.secure_url;
+      }
+    }
     const result = await createStoreService(req.body);
 
     return res.status(result.statusCode).json(result);
