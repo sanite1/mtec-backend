@@ -38,8 +38,6 @@ router
     createStore
   );
 
-router
-  .route("/resolve/:slug")
-  .get(isAuthenticated, resolveSlugValidation(), resolveSlug);
+router.route("/resolve/:slug").get(resolveSlugValidation(), resolveSlug);
 
 export default router;
