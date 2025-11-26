@@ -4,6 +4,7 @@ import {
   createStoreService,
   deleteStoreService,
   getStoreByIdService,
+  resolveSlugService,
   updateStoreService,
 } from "../services/store.service";
 import { IStoreDetails } from "../interfaces/store.interface";
@@ -21,6 +22,22 @@ export const getStoreById = async (
     const { id } = req.params;
 
     const result = await getStoreByIdService(id);
+
+    return res.status(result.statusCode).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resolveSlug = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { slug } = req.params;
+
+    const result = await resolveSlugService(slug);
 
     return res.status(result.statusCode).json(result);
   } catch (error) {

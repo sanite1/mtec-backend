@@ -13,6 +13,8 @@ const StoreDetailsSchema = new Schema<StoreDetailsDocument>(
     state: { type: String, required: true },
     zipCode: { type: String, required: true },
     streetAddress: { type: String, required: true },
+    slug: { type: String, required: true },
+    storeLink: { type: String, required: true },
 
     businessEmail: { type: String, required: true },
     businessPhone: { type: String, required: true },

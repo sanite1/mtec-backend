@@ -4,12 +4,14 @@ import {
   createStoreValidation,
   deleteStoreValidation,
   getStoreByIdValidation,
+  resolveSlugValidation,
   updateStoreValidation,
 } from "../validations/store.validation";
 import {
   createStore,
   deleteStore,
   getStoreById,
+  resolveSlug,
   updateStore,
 } from "../controllers/store.controller";
 import { upload } from "../config/upload";
@@ -35,5 +37,9 @@ router
     createStoreValidation(),
     createStore
   );
+
+router
+  .route("/resolve/:slug")
+  .get(isAuthenticated, resolveSlugValidation(), resolveSlug);
 
 export default router;

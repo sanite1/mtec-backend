@@ -118,3 +118,26 @@ export const getStoreByIdService = async (id: string) => {
     );
   }
 };
+
+export const resolveSlugService = async (slug: string) => {
+  try {
+    const store = await Store.findOne({ slug });
+
+    if (!store) throw new ApiError(404, `Store details not found: ${slug}`);
+
+    return new ApiResponse(
+      200,
+      "Store details retrieved successfully",
+      store.toJSON()
+    );
+  } catch (error: any) {
+    if (error instanceof ApiError) throw error;
+
+    console.error("Get Store By ID Error:", error);
+
+    throw new ApiError(
+      500,
+      error.message || "Something went wrong while retrieving store details"
+    );
+  }
+};

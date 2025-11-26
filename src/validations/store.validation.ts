@@ -10,6 +10,8 @@ export const createStoreValidation = () =>
       storeName: Joi.string().required(),
       businessName: Joi.string().required(),
       businessSector: Joi.string().required(),
+      slug: Joi.string().required(),
+      storeLink: Joi.string().required(),
       tagline: Joi.string().optional(),
       storeDescription: Joi.string().required(),
 
@@ -38,6 +40,8 @@ export const updateStoreValidation = () =>
       storeName: Joi.string().required(),
       businessName: Joi.string().required(),
       businessSector: Joi.string().required(),
+      slug: Joi.string().required(),
+      storeLink: Joi.string().required(),
       tagline: Joi.string().optional(),
       storeDescription: Joi.string().required(),
 
@@ -63,5 +67,12 @@ export const getStoreByIdValidation = () =>
   validate({
     params: Joi.object({
       id: Joi.string().required(),
+    }),
+  });
+
+export const resolveSlugValidation = () =>
+  validate({
+    params: Joi.object({
+      slug: Joi.string().required(),
     }),
   });
