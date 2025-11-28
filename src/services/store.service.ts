@@ -96,11 +96,11 @@ export const deleteStoreService = async (id: string) => {
   }
 };
 
-export const getStoreByIdService = async (id: string) => {
+export const getStoreByIdService = async (userId: string) => {
   try {
-    const store = await Store.findById(id);
+    const store = await Store.findOne({ userId });
 
-    if (!store) throw new ApiError(404, `Store details not found: ${id}`);
+    if (!store) throw new ApiError(404, `Store details not found: ${userId}`);
 
     return new ApiResponse(
       200,

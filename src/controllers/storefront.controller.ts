@@ -38,10 +38,7 @@ export const updateStorefront = async (
         files.bannerImage[0].buffer,
         "Storefront/banner"
       );
-      req.body.banner = {
-        ...JSON.parse(req.body.banner || "{}"),
-        image: upload.secure_url,
-      };
+      req.body.banner.image = upload.secure_url;
     }
 
     // Handle newsletter image
@@ -50,10 +47,7 @@ export const updateStorefront = async (
         files.newsletterImg[0].buffer,
         "Storefront/newsletter"
       );
-      req.body.newsletter = {
-        ...JSON.parse(req.body.newsletter || "{}"),
-        img: upload.secure_url,
-      };
+      req.body.newsletter.img = upload.secure_url;
     }
 
     const response = await updateStorefrontService(userId, req.body);

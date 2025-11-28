@@ -16,6 +16,10 @@ router
   .route("/:userId")
   .get(isAuthenticated, getStorefrontValidation(), getStorefrontController);
 
+router
+  .route("/user-storefront/:userId")
+  .get(getStorefrontValidation(), getStorefrontController);
+
 router.put(
   "/:userId",
   isAuthenticated,

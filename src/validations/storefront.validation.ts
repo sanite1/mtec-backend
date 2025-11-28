@@ -15,7 +15,7 @@ export const updateStorefrontValidation = () =>
     }),
     body: Joi.object({
       theme: Joi.string().optional(),
-
+      bannerImage: Joi.string().uri().optional(),
       banner: Joi.object({
         title: Joi.string().optional(),
         subtext: Joi.string().optional(),
@@ -37,6 +37,7 @@ export const updateStorefrontValidation = () =>
         address: Joi.string().optional(),
       }).optional(),
 
+      newsletterImg: Joi.string().uri().optional(),
       newsletter: Joi.object({
         headline: Joi.string().optional(),
         subtext: Joi.string().optional(),

@@ -10,7 +10,7 @@ export const getStorefrontService = async (userId: string) => {
     return new ApiResponse(
       200,
       "Storefront Settings Created successfully",
-      storefront
+      newStorefront
     );
   }
 
