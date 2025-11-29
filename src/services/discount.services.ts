@@ -12,7 +12,7 @@ import { Types } from "mongoose";
 export const getDiscountsService = async ({
   userId,
   page = 1,
-  limit = 20,
+  limit = 10,
   search,
   startDate,
   endDate,
@@ -22,7 +22,7 @@ export const getDiscountsService = async ({
   if (!user) throw new ApiError(404, `User not found: ${userId}`);
 
   const currentPage = Number(page) || 1;
-  const perPage = Number(limit) || 20;
+  const perPage = Number(limit);
   const filters: any = { userId };
 
   // 🔍 Search filter (by name or type)

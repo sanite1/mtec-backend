@@ -26,6 +26,7 @@ export const createShippingValidation = () =>
       estimatedDeliveryDays: Joi.number().min(1).required(),
 
       location: Joi.string().required(),
+      locationName: Joi.string().required(),
       isActive: Joi.boolean().default(true),
     }),
   });

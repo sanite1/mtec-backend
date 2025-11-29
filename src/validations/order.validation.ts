@@ -21,6 +21,7 @@ export const createOrderValidation = () =>
       shippingAddress: Joi.object({
         fullName: Joi.string().required(),
         phone: Joi.string().required(),
+        email: Joi.string().required(),
         addressLine1: Joi.string().required(),
         addressLine2: Joi.string().optional(),
         city: Joi.string().required(),

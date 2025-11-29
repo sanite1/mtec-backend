@@ -96,7 +96,7 @@ export const getProductsByUserService = async ({
   name,
   isActive,
   page = 1,
-  limit = 20,
+  limit = 10,
 }: ProductFilterParams) => {
   const filters: any = { userId };
 

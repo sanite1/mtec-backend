@@ -9,7 +9,12 @@ const shippingSchema = new Schema<IShipping>(
     description: { type: String, trim: true },
     price: { type: Number, required: true, min: 0 },
     estimatedDeliveryDays: { type: Number, required: true, min: 1 },
-    location: { type: String, trim: true },
+    locationName: { type: String, trim: true, required: true },
+    location: {
+      type: Schema.Types.ObjectId,
+      ref: "Location",
+      required: true,
+    },
     isActive: { type: Boolean, default: true },
   },
   {

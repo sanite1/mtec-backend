@@ -7,7 +7,7 @@ import Shipping from "../models/shipping";
 export const getShippingService = async ({
   userId,
   page = 1,
-  limit = 20,
+  limit = 10,
   search,
   location,
   isActive,
@@ -17,7 +17,7 @@ export const getShippingService = async ({
   if (!user) throw new ApiError(404, `User not found: ${userId}`);
 
   const currentPage = Number(page) || 1;
-  const perPage = Number(limit) || 20;
+  const perPage = Number(limit) || 10;
   const skip = (currentPage - 1) * perPage;
 
   const filters: any = { userId };
@@ -27,7 +27,7 @@ export const getShippingService = async ({
   }
 
   if (location) {
-    filters.location = { $regex: location, $options: "i" };
+    filters.locationName = { $regex: location, $options: "i" };
   }
 
   if (isActive === "true") filters.isActive = true;

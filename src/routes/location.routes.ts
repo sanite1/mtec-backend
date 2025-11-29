@@ -21,6 +21,10 @@ router
   .get(isAuthenticated, getLocationValidation(), getLocations);
 
 router
+  .route("/user-storefront/:userId")
+  .get(getLocationValidation(), getLocations);
+
+router
   .route("/")
   .post(isAuthenticated, createLocationValidation(), createLocation);
 

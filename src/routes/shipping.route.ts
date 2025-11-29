@@ -24,6 +24,10 @@ router
   .get(isAuthenticated, getShippingValidation(), getShipping);
 
 router
+  .route("/user-storefront/:userId")
+  .get(getShippingValidation(), getShipping);
+
+router
   .route("/:id")
   .patch(isAuthenticated, updateShippingValidation(), updateShipping)
   .delete(isAuthenticated, deleteShippingValidation(), deleteShipping);

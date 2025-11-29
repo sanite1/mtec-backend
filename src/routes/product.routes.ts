@@ -40,12 +40,20 @@ router
   .get(isAuthenticated, getProductsValidation(), getProductsByUser);
 
 router
+  .route("/user-storefront/:userId")
+  .get(getProductsValidation(), getProductsByUser);
+
+router
   .route("/:productId/history")
   .get(isAuthenticated, getProductHistoryValidation(), getProductHistory);
 
 router
   .route("/:userId/:productId")
   .get(isAuthenticated, getSingleProductValidation(), getSingleProduct);
+
+router
+  .route("/user-storefront/:userId/:productId")
+  .get(getSingleProductValidation(), getSingleProduct);
 
 router
   .route("/:productId")

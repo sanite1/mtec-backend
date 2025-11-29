@@ -7,7 +7,8 @@ export interface IShipping {
   description?: string;
   price: number;
   estimatedDeliveryDays: number;
-  location?: string;
+  locationName?: string;
+  location?: Types.ObjectId;
   isActive?: boolean;
 }
 

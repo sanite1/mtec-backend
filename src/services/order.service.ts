@@ -40,8 +40,12 @@ export const createOrderService = async (data: CreateOrderRequest) => {
             `Product variation not found: ${variationId}`
           );
       }
-
-      const price = variation?.price ?? product.price ?? null;
+      const price =
+        variation?.discountPrice ??
+        variation?.price ??
+        product?.discountPrice ??
+        product?.price ??
+        null;
 
       if (price === null)
         throw new ApiError(400, `No price defined for product ${productId}`);
