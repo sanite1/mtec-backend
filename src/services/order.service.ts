@@ -263,7 +263,7 @@ export const getOrderByIdService = async (id: string) => {
     throw new ApiError(404, "Order not found");
   }
 
-  return new ApiResponse(200, "Order retrieved successfully", { order });
+  return new ApiResponse(200, "Order retrieved successfully", order);
 };
 
 export const getOrderStatsService = async (userId: string) => {

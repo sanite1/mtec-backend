@@ -5,6 +5,7 @@ import {
   getDiscountStatsService,
   getDiscountsService,
   updateDiscountService,
+  verifyDiscountService,
 } from "../services/discount.services";
 import { UpdateDiscountRequest } from "../interfaces/discount.interface";
 import { ExpresFunction } from "../interfaces/helper.interface";
@@ -73,6 +74,25 @@ export const getDiscountStatsController = async (
     const { userId } = req.params;
 
     const result = await getDiscountStatsService(userId);
+
+    res.status(result.statusCode).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyDiscountController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { discountName, location } = req.body;
+
+    const result = await verifyDiscountService({
+      discountName,
+      location,
+    });
 
     res.status(result.statusCode).json(result);
   } catch (error) {

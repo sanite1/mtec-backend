@@ -15,6 +15,7 @@ export const getDiscountsService = async ({
   limit = 10,
   search,
   startDate,
+  location,
   endDate,
 }: GetDiscountParams) => {
   // ✅ Confirm store user exists
@@ -32,6 +33,10 @@ export const getDiscountsService = async ({
       { discountType: { $regex: search, $options: "i" } },
       { description: { $regex: search, $options: "i" } },
     ];
+  }
+
+  if (location) {
+    filters.locationName = { $regex: location, $options: "i" };
   }
 
   // 🗓 Date range filter
@@ -353,4 +358,35 @@ export const getDiscountStatsService = async (userId: string) => {
     "Discount statistics retrieved successfully",
     stats
   );
+};
+
+export const verifyDiscountService = async ({
+  discountName,
+  location,
+}: {
+  discountName: string;
+  location?: string;
+}) => {
+  const discount = await Discount.findOne({
+    discountName: discountName.trim(),
+  });
+
+  if (!discount) {
+    throw new ApiError(404, "Invalid coupon code");
+  }
+
+  const now = new Date();
+  const start = new Date(discount.startDate);
+  const end = new Date(discount.endDate);
+
+  if (now < start || now > end) {
+    throw new ApiError(404, "Coupon has expired");
+  }
+
+  // ✅ Optional: Location validation
+  if (location && String(discount.locationName) !== location) {
+    throw new ApiError(404, "Coupon not valid for this location");
+  }
+
+  return new ApiResponse(200, "Discount retrieved successfully", discount);
 };

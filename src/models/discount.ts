@@ -15,7 +15,8 @@ const discountSchema = new Schema<IDiscount>(
     discountValue: { type: Number, required: true, trim: true },
     startDate: { type: String, required: true, trim: true },
     endDate: { type: String, required: true, trim: true },
-    location: { type: String, required: true, trim: true },
+    location: { type: Schema.Types.ObjectId, ref: "Location", required: true },
+    locationName: { type: String, required: true, trim: true },
     products: [
       {
         productId: {
@@ -24,7 +25,7 @@ const discountSchema = new Schema<IDiscount>(
           required: true,
         },
         name: { type: String, required: true },
-        price: { type: Number, required: true },
+        price: { type: String, required: true },
       },
     ],
   },

@@ -10,6 +10,7 @@ export const getDiscountValidation = () =>
       limit: Joi.number().integer().min(1).optional(),
       search: Joi.string().allow("").optional(),
       startDate: Joi.date().optional(),
+      location: Joi.string().optional(),
       endDate: Joi.date().optional(),
     }),
   });
@@ -25,12 +26,13 @@ export const createDiscountValidation = () =>
       startDate: Joi.date().required(),
       endDate: Joi.date().required(),
       location: Joi.string().required(),
+      locationName: Joi.string().required(),
       products: Joi.array()
         .items(
           Joi.object({
             productId: Joi.string().required(),
             name: Joi.string().required(),
-            price: Joi.number().required(),
+            price: Joi.string().required(),
             // products: Joi.array().items(Joi.string()).optional(),
           })
         )
@@ -76,5 +78,13 @@ export const getDiscountStatsValidation = () =>
   validate({
     params: Joi.object({
       userId: Joi.string().required(),
+    }),
+  });
+
+export const verifyDiscountValidation = () =>
+  validate({
+    body: Joi.object({
+      discountName: Joi.string().required(),
+      location: Joi.string().required(),
     }),
   });

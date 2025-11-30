@@ -8,8 +8,14 @@ export interface IDiscount {
   discountValue: number;
   startDate: string;
   endDate: string;
-  location: string;
-  products: [string];
+  location: Types.ObjectId;
+  locationName: string;
+  products?: {
+    productId?: string;
+    variationId?: string;
+    name?: string;
+    price?: string;
+  }[];
 }
 
 export interface CreateDiscountRequest extends IDiscount {}
@@ -20,6 +26,7 @@ export interface GetDiscountParams {
   limit?: number;
   search?: string;
   startDate?: string;
+  location?: string;
   endDate?: string;
 }
 
@@ -31,5 +38,6 @@ export interface UpdateDiscountRequest {
   startDate?: string;
   endDate?: string;
   location?: string;
+  locationName?: string;
   products?: [string];
 }
