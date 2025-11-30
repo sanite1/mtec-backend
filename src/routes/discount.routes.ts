@@ -6,6 +6,7 @@ import {
   getDiscountStatsController,
   getDiscounts,
   updateDiscount,
+  verifyDiscountController,
 } from "../controllers/discount.controller";
 import {
   createDiscountValidation,
@@ -13,6 +14,7 @@ import {
   getDiscountStatsValidation,
   getDiscountValidation,
   updateDiscountValidation,
+  verifyDiscountValidation,
 } from "../validations/discount.validation";
 
 const router = Router();
@@ -21,6 +23,10 @@ const router = Router();
 router
   .route("/:userId")
   .get(isAuthenticated, getDiscountValidation(), getDiscounts);
+
+router
+  .route("/user-storefront/verify")
+  .post(verifyDiscountValidation(), verifyDiscountController);
 
 router
   .route("/")

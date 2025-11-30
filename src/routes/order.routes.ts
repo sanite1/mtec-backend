@@ -19,8 +19,6 @@ import {
 } from "../validations/order.validation";
 // optionally add isAuthenticated middleware if you want only logged-in users to create orders
 import { isAuthenticated } from "../middlewares/authenticatedMiddleWare";
-import { verifyDiscountValidation } from "../validations/discount.validation";
-import { verifyDiscountController } from "../controllers/discount.controller";
 
 const router = Router();
 
@@ -54,10 +52,6 @@ router
   .route("/:id")
   .get(isAuthenticated, getSingleOrderValidation(), getOrderByIdController)
   .delete(isAuthenticated, cancelOrderValidation(), cancelOrderController);
-
-router
-  .route("/user-storefront/verify")
-  .post(verifyDiscountValidation(), verifyDiscountController);
 
 router
   .route("/user-storefront/:id")

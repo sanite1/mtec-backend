@@ -59,7 +59,7 @@ export const updateDiscountValidation = () =>
           Joi.object({
             productId: Joi.string().required(),
             name: Joi.string().required(),
-            price: Joi.number().required(),
+            price: Joi.string().required(),
             // products: Joi.array().items(Joi.string()).optional(),
           })
         )
