@@ -56,6 +56,23 @@ export const getTaxesService = async ({
   });
 };
 
+export const getSingleStorefrontTaxService = async ({
+  userId,
+  location,
+}: GetTaxesParams) => {
+  const filters: any = { userId };
+
+  if (location) filters.locationName = location.trim();
+  filters.applyToCheckout = true;
+
+  const [tax] = await Promise.all([Tax.findOne(filters)]);
+
+  if (!tax) {
+    throw new ApiResponse(201, "No tax found for this user");
+  }
+  return new ApiResponse(200, "Tax Retrieved Successfully", tax);
+};
+
 export const createTaxService = async (data: CreateTaxRequest) => {
   try {
     // ✅ Verify store owner exists

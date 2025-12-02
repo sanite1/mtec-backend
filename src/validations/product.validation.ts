@@ -59,6 +59,7 @@ export const getProductsValidation = () =>
     }),
     query: Joi.object({
       category: Joi.string().optional(),
+      location: Joi.string().optional(),
       name: Joi.string().optional(),
       isActive: Joi.boolean().optional(),
       page: Joi.number().default(1),

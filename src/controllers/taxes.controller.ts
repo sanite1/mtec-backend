@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import {
   createTaxService,
   deleteTaxService,
+  getSingleStorefrontTaxService,
   getTaxesService,
   updateTaxService,
 } from "../services/taxes.services";
@@ -16,6 +17,23 @@ export const getTaxes = async (
   try {
     const { userId } = req.params;
     const result = await getTaxesService({ userId, ...req.query });
+    return res.status(result.statusCode).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSingleStorefrontTax = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+    const result = await getSingleStorefrontTaxService({
+      userId,
+      ...req.query,
+    });
     return res.status(result.statusCode).json(result);
   } catch (error) {
     next(error);

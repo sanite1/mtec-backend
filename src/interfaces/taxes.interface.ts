@@ -18,6 +18,8 @@ export interface GetTaxesParams {
   limit?: number;
   search?: string;
   startDate?: string;
+  location?: string;
+  isActive?: string;
   endDate?: string;
 }
 

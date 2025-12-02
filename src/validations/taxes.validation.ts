@@ -9,6 +9,8 @@ export const getTaxesValidation = () =>
       page: Joi.number().integer().min(1).optional(),
       limit: Joi.number().integer().min(1).optional(),
       search: Joi.string().allow("").optional(),
+      location: Joi.string().optional(),
+      isActive: Joi.boolean().optional(),
       startDate: Joi.date().optional(),
       endDate: Joi.date().optional(),
     }),

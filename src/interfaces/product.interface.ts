@@ -82,6 +82,7 @@ export interface ProductFilterParams {
   userId: string;
   category?: string;
   name?: string;
+  location?: string;
   isActive?: boolean;
   page?: number;
   limit?: number;

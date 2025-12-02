@@ -95,12 +95,15 @@ export const getProductsByUserService = async ({
   userId,
   category,
   name,
+  location,
   isActive,
   page = 1,
   limit = 10,
 }: ProductFilterParams) => {
   const filters: any = { userId };
 
+  if (location) filters.locationName = location.trim();
+  if (category) filters.category = category;
   if (category) filters.category = category;
   if (name) filters.name = { $regex: name, $options: "i" }; // case-insensitive search
   if (typeof isActive === "boolean") filters.isActive = isActive;
