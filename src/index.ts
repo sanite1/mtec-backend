@@ -30,25 +30,30 @@ const corsOption = {
 };
 app.use(cors(corsOption));
 
-connectDb();
+/* ✅ IMPORTANT: WAIT FOR DB BEFORE STARTING SERVER */
+(async () => {
+  await connectDb();
 
-app.use("/api/users", userRoutes);
-app.use("/api/onboarding", onboardingRoutes);
-app.use("/api/product", productRoutes);
-app.use("/api/order", orderRoutes);
-app.use("/api/customer", customersRoutes);
-app.use("/api/storefront", storefrontRoutes);
-app.use("/api/shipping", shippingRoutes);
-app.use("/api/taxes", taxesRoutes);
-app.use("/api/location", locationRoutes);
-app.use("/api/discount", discountRoutes);
-app.use("/api/store", storetRoutes);
-app.use("/api/payout-details", payoutRoutes);
+  app.use("/api/users", userRoutes);
+  app.use("/api/onboarding", onboardingRoutes);
+  app.use("/api/product", productRoutes);
+  app.use("/api/order", orderRoutes);
+  app.use("/api/customer", customersRoutes);
+  app.use("/api/storefront", storefrontRoutes);
+  app.use("/api/shipping", shippingRoutes);
+  app.use("/api/taxes", taxesRoutes);
+  app.use("/api/location", locationRoutes);
+  app.use("/api/discount", discountRoutes);
+  app.use("/api/store", storetRoutes);
+  app.use("/api/payout-details", payoutRoutes);
 
-app.listen(PORT, () => {
-  console.log("Server Listening on port 4000...");
-});
-app.all("*", (req, _res, next) => {
-  next(new ApiError(404, `Can't find ${req.originalUrl} on the server!`));
-});
-app.use(globalErrorHandler);
+  app.all("*", (req, _res, next) => {
+    next(new ApiError(404, `Can't find ${req.originalUrl} on the server!`));
+  });
+
+  app.use(globalErrorHandler);
+
+  app.listen(PORT, () => {
+    console.log(`✅ Server listening on port ${PORT}...`);
+  });
+})();

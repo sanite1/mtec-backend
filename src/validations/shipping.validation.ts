@@ -45,6 +45,7 @@ export const updateShippingValidation = () =>
       price: Joi.number().min(0).optional(),
       estimatedDeliveryDays: Joi.number().min(1).optional(),
       location: Joi.string().optional(),
+      locationName: Joi.string().optional(),
       isActive: Joi.boolean().optional(),
     }),
   });

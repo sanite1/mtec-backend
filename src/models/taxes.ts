@@ -27,6 +27,10 @@ const taxSchema = new Schema<ITax>(
       type: String,
       trim: true,
     },
+    locationName: {
+      type: String,
+      trim: true,
+    },
     applyToCheckout: {
       type: Boolean,
       default: false,

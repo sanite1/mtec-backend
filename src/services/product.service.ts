@@ -52,12 +52,13 @@ export const createProductService = async (data: CreateProductRequest) => {
     sku: data.sku,
     description: data.description,
     location: data.location,
+    locationName: data.locationName,
     costPrice: hasVariations ? undefined : data.costPrice,
     discountPrice: hasVariations ? undefined : data.discountPrice,
     unit: data.unit,
     price: hasVariations ? undefined : data.price,
     ...(priceRange !== undefined && { priceRange }),
-    collection: data.collection,
+    category: data.category,
     variantsOptionGroup: data.variantsOptionGroup,
     images: data.images,
     totalStock,
@@ -92,7 +93,7 @@ export const createProductService = async (data: CreateProductRequest) => {
 
 export const getProductsByUserService = async ({
   userId,
-  collection,
+  category,
   name,
   isActive,
   page = 1,
@@ -100,7 +101,7 @@ export const getProductsByUserService = async ({
 }: ProductFilterParams) => {
   const filters: any = { userId };
 
-  if (collection) filters.collection = collection;
+  if (category) filters.category = category;
   if (name) filters.name = { $regex: name, $options: "i" }; // case-insensitive search
   if (typeof isActive === "boolean") filters.isActive = isActive;
 
@@ -207,8 +208,9 @@ export const updateProductService = async (
     "name",
     "description",
     "location",
+    "locationName",
     "unit",
-    "collection",
+    "category",
     "images",
     "isActive",
   ];

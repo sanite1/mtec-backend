@@ -49,11 +49,11 @@ export const getProductsByUser: ExpresFunction<ProductFilterParams> = async (
 ) => {
   try {
     const { userId } = req.params;
-    const { collection, name, isActive, page, limit } = req.query;
+    const { category, name, isActive, page, limit } = req.query;
 
     const filters: ProductFilterParams = {
       userId,
-      collection: collection as string,
+      category: category as string,
       name: name as string,
       isActive:
         isActive === "true" ? true : isActive === "false" ? false : undefined,

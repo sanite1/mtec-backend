@@ -22,6 +22,7 @@ export const createTaxValidation = () =>
       description: Joi.string().optional(),
       rate: Joi.number().min(0).max(100).required(),
       location: Joi.string().optional(),
+      locationName: Joi.string().optional(),
       applyToCheckout: Joi.boolean().default(false),
     }),
   });
@@ -37,6 +38,7 @@ export const updateTaxValidation = () =>
       description: Joi.string().optional(),
       rate: Joi.number().min(0).max(100).optional(),
       location: Joi.string().optional(),
+      locationName: Joi.string().optional(),
       applyToCheckout: Joi.boolean().optional(),
     }),
   });

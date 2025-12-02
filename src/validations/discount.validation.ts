@@ -53,6 +53,7 @@ export const updateDiscountValidation = () =>
       discountValue: Joi.number().optional(),
       startDate: Joi.date().optional(),
       location: Joi.string().optional(),
+      locationName: Joi.string().optional(),
       endDate: Joi.date().optional(),
       products: Joi.array()
         .items(

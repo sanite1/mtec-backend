@@ -4,6 +4,7 @@ export interface IProduct {
   userId: Types.ObjectId;
   name: string;
   location: string;
+  locationName: string;
   sku: string;
   description?: string;
   priceRange?: string;
@@ -14,7 +15,7 @@ export interface IProduct {
   totalStock: number;
   variantsOptionGroup?: VariantsOptionGroup[];
   unit: string;
-  collection?: string;
+  category?: string;
   images?: string[];
   isActive?: boolean;
 }
@@ -56,13 +57,14 @@ export interface CreateProductRequest {
   userId: string;
   name: string;
   location: string;
+  locationName: string;
   sku: string;
   description?: string;
   price?: number;
   costPrice?: number;
   discountPrice?: number;
   unit: string;
-  collection?: string;
+  category?: string;
   images?: string[];
   totalStock?: number;
   variantsOptionGroup?: VariantsOptionGroup[];
@@ -78,7 +80,7 @@ export interface CreateProductRequest {
 
 export interface ProductFilterParams {
   userId: string;
-  collection?: string;
+  category?: string;
   name?: string;
   isActive?: boolean;
   page?: number;

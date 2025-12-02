@@ -6,6 +6,7 @@ export interface ITax {
   description?: string;
   rate: number; // percentage rate e.g., 5 for 5%
   location?: string;
+  locationName?: string;
   applyToCheckout: boolean;
 }
 
@@ -25,5 +26,6 @@ export interface UpdateTaxRequest {
   description?: string;
   rate?: number; // percentage rate e.g., 5 for 5%
   location?: string;
+  locationName?: string;
   applyToCheckout?: boolean;
 }
