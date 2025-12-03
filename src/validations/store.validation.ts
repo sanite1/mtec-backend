@@ -14,6 +14,8 @@ export const createStoreValidation = () =>
       storeLink: Joi.string().required(),
       tagline: Joi.string().optional(),
       storeDescription: Joi.string().required(),
+      storeColor: Joi.string().required(),
+      isLightColor: Joi.boolean().required(),
 
       businessEmail: Joi.string().email().required(),
       businessPhone: Joi.string().required(),

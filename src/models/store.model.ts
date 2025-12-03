@@ -15,6 +15,8 @@ const StoreDetailsSchema = new Schema<StoreDetailsDocument>(
     streetAddress: { type: String, required: true },
     slug: { type: String, required: true },
     storeLink: { type: String, required: true },
+    storeColor: { type: String, required: true },
+    isLightColor: { type: Boolean, required: true },
 
     businessEmail: { type: String, required: true },
     businessPhone: { type: String, required: true },
