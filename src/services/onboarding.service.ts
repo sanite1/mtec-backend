@@ -6,6 +6,10 @@ import {
   IOnboardingStep,
 } from "../interfaces/onboarding.interface";
 import Onboarding from "../models/onboarding";
+import { Store } from "../models/store.model";
+import { Product } from "../models/product";
+import Shipping from "../models/shipping";
+import PayoutDetails from "../models/payoutDetails";
 
 // TODO: Replace this with your permanent step list once you provide it
 const DEFAULT_STEPS: IOnboardingStep[] = [
@@ -49,16 +53,71 @@ export const initOnboardingService = async (data: IInitOnboardingRequest) => {
     onboarding
   );
 };
-
 export const getOnboardingService = async (userId: string) => {
   if (!Types.ObjectId.isValid(userId)) {
     throw new ApiError(400, "Invalid user ID");
   }
 
-  const onboarding = await Onboarding.findOne({ userId });
+  // ✅ Fetch real setup data (SOURCE OF TRUTH)
+  const [storeDetails, products, shipping, payout] = await Promise.all([
+    Store.findOne({ userId }),
+    Product.findOne({ userId }),
+    Shipping.findOne({ userId }),
+    PayoutDetails.findOne({ userId }),
+  ]);
+
+  // ✅ Determine completion from database
+  const completionMap: Record<string, boolean> = {
+    storeDetails: !!storeDetails,
+    products: !!products,
+    shipping: !!shipping,
+    payout: !!payout,
+    preview: false, // optional/manual
+    trial: false, // optional/manual
+  };
+
+  // ✅ Build fresh steps array dynamically
+  const steps = defaultOnboardingSteps.map((step) => {
+    const completed = completionMap[step.key] ?? false;
+
+    return {
+      key: step.key,
+      optional: step.optional,
+      completed,
+      completedAt: completed ? new Date() : null,
+    };
+  });
+
+  // ✅ Calculate required stats
+  const requiredSteps = steps.filter((s) => !s.optional);
+  const completedRequiredSteps = requiredSteps.filter((s) => s.completed);
+
+  const totalSteps = requiredSteps.length;
+  const completedSteps = completedRequiredSteps.length;
+
+  const overallProgress = Math.round((completedSteps / totalSteps) * 100);
+
+  const isCompleted = completedSteps === totalSteps;
+
+  // ✅ Find or update onboarding record
+  let onboarding = await Onboarding.findOne({ userId });
 
   if (!onboarding) {
-    throw new ApiError(404, "Onboarding record not found");
+    onboarding = await Onboarding.create({
+      userId,
+      steps,
+      overallProgress,
+      completedSteps,
+      totalSteps,
+      isCompleted,
+    });
+  } else {
+    onboarding.steps = steps;
+    onboarding.overallProgress = overallProgress;
+    onboarding.completedSteps = completedSteps;
+    onboarding.totalSteps = totalSteps;
+    onboarding.isCompleted = isCompleted;
+    await onboarding.save();
   }
 
   return new ApiResponse(200, "Onboarding progress retrieved", onboarding);
@@ -75,6 +134,7 @@ export const updateOnboardingStepService = async (
 
   const onboarding = await Onboarding.findOne({ userId });
   if (!onboarding) {
+    // return await initOnboardingService({ userId });
     throw new ApiError(404, "Onboarding record not found");
   }
 
