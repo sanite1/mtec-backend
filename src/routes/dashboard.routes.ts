@@ -3,10 +3,12 @@ import { isAuthenticated } from "../middlewares/authenticatedMiddleWare";
 import {
   getDashboardSummaryValidation,
   getSalesOverviewDataValidation,
+  getTopSellingProductsValidation,
 } from "../validations/dashboard.validation";
 import {
   getDashboardSummary,
   getSalesOverviewData,
+  getTopSellingProducts,
 } from "../controllers/dashboard.controller";
 
 const router = Router();
@@ -15,6 +17,14 @@ const router = Router();
 router
   .route("/stats/:userId")
   .get(isAuthenticated, getDashboardSummaryValidation(), getDashboardSummary);
+
+router
+  .route("/top-products/:userId")
+  .get(
+    isAuthenticated,
+    getTopSellingProductsValidation(),
+    getTopSellingProducts
+  );
 
 router
   .route("/sales-overview/:userId")

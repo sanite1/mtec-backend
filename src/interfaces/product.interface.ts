@@ -81,7 +81,7 @@ export interface CreateProductRequest {
 export interface ProductFilterParams {
   userId: string;
   category?: string;
-  name?: string;
+  search?: string;
   location?: string;
   isActive?: boolean;
   page?: number;

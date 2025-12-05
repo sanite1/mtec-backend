@@ -92,18 +92,15 @@ const getDateRangeFromFilter = (filter: SalesRangeFilter) => {
       break;
 
     case "3_months":
-      startDate = new Date();
-      startDate.setMonth(now.getMonth() - 3);
+      startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
       break;
 
     case "6_months":
-      startDate = new Date();
-      startDate.setMonth(now.getMonth() - 6);
+      startDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
       break;
 
     case "1_year":
-      startDate = new Date();
-      startDate.setFullYear(now.getFullYear() - 1);
+      startDate = new Date(now.getFullYear(), 0, 1);
       break;
 
     default:
@@ -126,45 +123,144 @@ export const getSalesOverviewDataService = async ({
 
   const { startDate, endDate } = getDateRangeFromFilter(filter);
 
-  const sales = await Order.aggregate([
+  // Fetch all orders in range
+  const orders = await Order.aggregate([
     {
       $match: {
         userId: new Types.ObjectId(userId),
         createdAt: { $gte: startDate, $lte: endDate },
-        status: "completed", // adjust if needed
+        status: "completed",
       },
     },
-    {
-      $group: {
-        _id: {
-          year: { $year: "$createdAt" },
-          month: { $month: "$createdAt" },
-        },
-        totalRevenue: { $sum: "$total" },
-      },
-    },
-    { $sort: { "_id.year": 1, "_id.month": 1 } },
   ]);
 
-  // ✅ Convert to graph-friendly format
-  const labels: string[] = [];
-  const data: number[] = [];
-  let totalRevenue = 0;
+  // ------- BUILD STRUCTURE BASED ON FILTER ---------
+  let labels: string[] = [];
+  let data: number[] = [];
 
-  sales.forEach((item) => {
-    const monthLabel = new Date(
-      item._id.year,
-      item._id.month - 1
-    ).toLocaleString("default", { month: "short" });
+  if (filter === "this_month") {
+    // ================== 📅 DAILY DATA ==================
+    const year = startDate.getFullYear();
+    const month = startDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    labels.push(monthLabel);
-    data.push(item.totalRevenue);
-    totalRevenue += item.totalRevenue;
-  });
+    // Initialize all days to 0 revenue
+    const dailyRevenue: Record<number, number> = {};
+    for (let day = 1; day <= daysInMonth; day++) dailyRevenue[day] = 0;
+
+    // Add revenues
+    orders.forEach((order) => {
+      const day = new Date(order.createdAt).getDate();
+      dailyRevenue[day] += order.total;
+    });
+
+    labels = Object.keys(dailyRevenue); // "1", "2", "3", ...
+    data = Object.values(dailyRevenue); // revenue per day
+  } else {
+    // =============== 📅 MONTHLY DATA ==================
+    const monthDiff =
+      filter === "3_months" ? 3 : filter === "6_months" ? 6 : 12; // 1 year
+
+    const monthlyRevenue: Record<string, number> = {};
+
+    const now = new Date();
+    const start = new Date(
+      now.getFullYear(),
+      now.getMonth() - (monthDiff - 1),
+      1
+    );
+
+    // Build month keys like "2025-01"
+    const generateMonthKey = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+    // Initialize months
+    const iter = new Date(start);
+    while (iter <= now) {
+      monthlyRevenue[generateMonthKey(iter)] = 0;
+      iter.setMonth(iter.getMonth() + 1);
+    }
+
+    // Add order revenue to proper month
+    orders.forEach((order) => {
+      const dt = new Date(order.createdAt);
+      const key = generateMonthKey(dt);
+      if (monthlyRevenue[key] !== undefined) {
+        monthlyRevenue[key] += order.total;
+      }
+    });
+
+    labels = Object.keys(monthlyRevenue).map((key) =>
+      new Date(key + "-01").toLocaleString("default", { month: "short" })
+    );
+
+    data = Object.values(monthlyRevenue);
+  }
+
+  const totalRevenue = data.reduce((a, b) => a + b, 0);
 
   return new ApiResponse(200, "Sales overview retrieved", {
     labels,
     data,
     totalRevenue,
   });
+};
+
+export const getTopSellingProductsService = async (userId: string) => {
+  if (!Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid user ID");
+  }
+
+  const topProducts = await Order.aggregate([
+    {
+      $match: {
+        userId: new Types.ObjectId(userId),
+        status: "completed",
+      },
+    },
+
+    // Expand order items
+    { $unwind: "$items" },
+
+    // Group by product
+    {
+      $group: {
+        _id: "$items.productId",
+        totalSold: { $sum: "$items.quantity" },
+        // Capture the latest price in case orders stored old data
+        lastOrderPrice: { $last: "$items.price" },
+      },
+    },
+
+    // Get product details
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    { $unwind: "$product" },
+
+    // Project final output
+    {
+      $project: {
+        productId: "$product._id",
+        name: "$product.name",
+        image: { $first: "$product.images" }, // return first image
+        price: {
+          // Prefer product price, fallback to order price
+          $ifNull: ["$product.price", "$lastOrderPrice"],
+        },
+        totalSold: 1,
+      },
+    },
+
+    // Sort by sales
+    { $sort: { totalSold: -1 } },
+    { $limit: 3 },
+  ]);
+
+  return new ApiResponse(200, "Top selling products retrieved", topProducts);
 };

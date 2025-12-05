@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import {
   getDashboardSummaryService,
   getSalesOverviewDataService,
+  getTopSellingProductsService,
 } from "../services/dashboard.services";
 import { SalesRangeFilter } from "../interfaces/dashboard.interface";
 
@@ -33,6 +34,22 @@ export const getSalesOverviewData = async (
     });
     return res.status(result.statusCode).json(result);
   } catch (error) {
+    next(error);
+  }
+};
+
+export const getTopSellingProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await getTopSellingProductsService(userId);
+
+    return res.status(200).json(result);
+  } catch (error: any) {
     next(error);
   }
 };

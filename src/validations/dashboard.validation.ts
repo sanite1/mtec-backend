@@ -7,6 +7,13 @@ export const getDashboardSummaryValidation = () =>
     }),
   });
 
+export const getTopSellingProductsValidation = () =>
+  validate({
+    params: Joi.object({
+      userId: Joi.string().required(),
+    }),
+  });
+
 export const getSalesOverviewDataValidation = () =>
   validate({
     params: Joi.object({

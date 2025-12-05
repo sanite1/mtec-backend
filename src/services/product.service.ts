@@ -94,7 +94,7 @@ export const createProductService = async (data: CreateProductRequest) => {
 export const getProductsByUserService = async ({
   userId,
   category,
-  name,
+  search,
   location,
   isActive,
   page = 1,
@@ -105,7 +105,7 @@ export const getProductsByUserService = async ({
   if (location) filters.locationName = location.trim();
   if (category) filters.category = category;
   if (category) filters.category = category;
-  if (name) filters.name = { $regex: name, $options: "i" }; // case-insensitive search
+  if (search) filters.name = { $regex: search, $options: "i" }; // case-insensitive search
   if (typeof isActive === "boolean") filters.isActive = isActive;
 
   const skip = (page - 1) * limit;
