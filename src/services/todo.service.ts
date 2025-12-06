@@ -1,0 +1,239 @@
+import { Types } from "mongoose";
+import ApiError from "../errors/apiError";
+import { Todo } from "../models/todo";
+import { CreateTodoArgs, ITodo } from "../interfaces/todo.interface";
+import ApiResponse from "../errors/apiResponse";
+import User from "../models/User";
+
+// BASE GENERIC CREATE TODO SERVICE
+export const createTodoService = async (args: CreateTodoArgs) => {
+  const { userId, type, title, actionUrl } = args;
+
+  try {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new ApiError(400, "Invalid user ID");
+    }
+
+    if (!type || !title || !actionUrl) {
+      throw new ApiError(400, "Missing required todo fields");
+    }
+
+    const todo = await Todo.create({
+      userId,
+      title: args.title,
+      description: args.description || "",
+      type: args.type,
+      metadata: args.metadata || {},
+      actionUrl: args.actionUrl,
+      priority: args.priority || "medium",
+    });
+
+    return new ApiResponse(200, "Tax Retrieved Successfully", todo);
+  } catch (error: any) {
+    if (error instanceof ApiError) throw error;
+    console.error("Create Tax Error:", error);
+    throw new ApiError(
+      500,
+      error.message || "Something went wrong while creating the tax"
+    );
+  }
+};
+
+// SPECIFIC TODO CREATORS
+// Each service collects the arguments it needs
+
+// 1. LOW STOCK PRODUCT
+export const createLowStockTodo = async ({
+  userId,
+  productId,
+  productName,
+  currentStock,
+}: {
+  userId: string;
+  productId: string;
+  productName: string;
+  currentStock: number;
+}) => {
+  return createTodoService({
+    userId,
+    type: "low_stock",
+    title: `Low Stock: ${productName}`,
+    description: `${productName} is almost out of stock (${currentStock} left).`,
+    metadata: { productId, currentStock },
+    actionUrl: `/products/${productId}`,
+    priority: "high",
+  });
+};
+
+// 2. ORDER PENDING CONFIRMATION
+export const createOrderPendingTodo = async ({
+  userId,
+  orderId,
+}: {
+  userId: string;
+  orderId: string;
+}) => {
+  return createTodoService({
+    userId,
+    type: "order_pending",
+    title: "New Order Pending",
+    description: `Order ${orderId} needs confirmation.`,
+    metadata: { orderId },
+    actionUrl: `/orders/${orderId}`,
+    priority: "medium",
+  });
+};
+
+// 3. ORDER NEEDS SHIPPING
+export const createOrderShippingTodo = async ({
+  userId,
+  orderId,
+  orderName,
+}: {
+  userId: string;
+  orderId: string;
+  orderName: string;
+}) => {
+  return createTodoService({
+    userId,
+    type: "order_needs_shipping",
+    title: `Mark ${orderName} as shipped/delivered`,
+    description: `Order ${orderName} is ready to be shipped.`,
+    metadata: { orderId },
+    actionUrl: `/orders/${orderId}`,
+    priority: "high",
+  });
+};
+
+// 4. STORE SETUP INCOMPLETE
+export const createStoreSetupTodo = async ({
+  userId,
+  missingFields,
+}: {
+  userId: string;
+  missingFields: string[];
+}) => {
+  return createTodoService({
+    userId,
+    type: "incomplete_store_setup",
+    title: "Store Setup Incomplete",
+    description: `You still need to complete: ${missingFields.join(", ")}`,
+    metadata: { missingFields },
+    actionUrl: "/settings/store",
+    priority: "medium",
+  });
+};
+
+// 5. MISSING BANK INFORMATION
+export const createMissingBankInfoTodo = async ({
+  userId,
+}: {
+  userId: string;
+}) => {
+  return createTodoService({
+    userId,
+    type: "missing_bank_info",
+    title: "Bank Details Missing",
+    description: "Add bank details to receive payments.",
+    actionUrl: "/payments",
+    priority: "high",
+  });
+};
+
+// 6. NEW MESSAGE
+export const createNewMessageTodo = async ({
+  userId,
+  conversationId,
+}: {
+  userId: string;
+  conversationId: string;
+}) => {
+  return createTodoService({
+    userId,
+    type: "new_message",
+    title: "New Customer Message",
+    description: "You have an unread customer message.",
+    metadata: { conversationId },
+    actionUrl: `/inbox/${conversationId}`,
+    priority: "low",
+  });
+};
+
+// 7. CUSTOM TASK
+export const createCustomTaskTodo = async ({
+  userId,
+  title,
+  description,
+  actionUrl,
+  metadata,
+}: {
+  userId: string;
+  title: string;
+  description?: string;
+  actionUrl: string;
+  metadata?: Record<string, any>;
+}) => {
+  return createTodoService({
+    userId,
+    type: "custom_task",
+    title,
+    description,
+    metadata,
+    actionUrl,
+  });
+};
+
+// GET TODOS
+export const getTodosService = async ({ userId }: { userId: string }) => {
+  // 1. Validate user
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, `User not found: ${userId}`);
+
+  // 2. Build filters
+  const filters: any = { userId };
+
+  filters.completed = false;
+
+  // 3. Parallel query
+  const [todos] = await Promise.all([
+    Todo.find(filters).sort({ createdAt: -1 }),
+  ]);
+
+  // 4. Response
+  return new ApiResponse(200, "Todos retrieved successfully", todos);
+};
+
+// MARK TODO AS COMPLETED
+export const completeTodoService = async (todoId: string) => {
+  if (!Types.ObjectId.isValid(todoId)) {
+    throw new ApiError(400, "Invalid todo ID");
+  }
+
+  const todo = await Todo.findById(todoId);
+  if (!todo) {
+    throw new ApiError(404, `Todo not found: ${todoId}`);
+  }
+
+  todo.completed = true;
+  await todo.save();
+
+  return new ApiResponse(200, "Todo marked as completed", todo);
+};
+
+// DELETE TODO
+export const deleteTodoService = async (todoId: string) => {
+  if (!Types.ObjectId.isValid(todoId)) {
+    throw new ApiError(400, "Invalid todo ID");
+  }
+
+  const todo = await Todo.findById(todoId);
+  if (!todo) {
+    throw new ApiError(404, `Todo not found: ${todoId}`);
+  }
+
+  await Todo.findByIdAndDelete(todoId);
+
+  return new ApiResponse(200, "Todo deleted successfully", {
+    deletedId: todoId,
+  });
+};

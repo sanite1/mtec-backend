@@ -3,6 +3,7 @@ import ApiResponse from "../errors/apiResponse";
 import { IStoreCreate, IStoreUpdate } from "../interfaces/store.interface";
 import User from "../models/User";
 import { Store } from "../models/store.model";
+import { createStoreSetupTodo } from "./todo.service";
 
 export const createStoreService = async (data: IStoreCreate) => {
   try {
@@ -10,7 +11,7 @@ export const createStoreService = async (data: IStoreCreate) => {
     const user = await User.findById(data.userId);
     if (!user) throw new ApiError(404, `User not found: ${data.userId}`);
 
-    // 2) Prevent duplicate store record per user (optional rule)
+    // 2) Prevent duplicate store
     const existingStore = await Store.findOne({ userId: data.userId });
     if (existingStore) {
       throw new ApiError(
@@ -19,8 +20,29 @@ export const createStoreService = async (data: IStoreCreate) => {
       );
     }
 
-    // 3) Create new store
+    // 3) Detect incomplete store data
+    const REQUIRED_FIELDS: (keyof IStoreCreate)[] = [
+      "storeName",
+      "businessEmail",
+      "businessPhone",
+      "country",
+      "logoUrl",
+      "storeDescription",
+    ];
+
+    const missingFields = REQUIRED_FIELDS.filter((field) => !data[field]);
+    const isIncomplete = missingFields.length > 0;
+
+    // 4) Create new store
     const newStore = await Store.create(data);
+
+    // 5) Automatically create TODO if incomplete
+    if (isIncomplete) {
+      await createStoreSetupTodo({
+        userId: data.userId,
+        missingFields,
+      });
+    }
 
     return new ApiResponse(
       201,
@@ -42,15 +64,35 @@ export const createStoreService = async (data: IStoreCreate) => {
 export const updateStoreService = async (id: string, data: IStoreUpdate) => {
   try {
     const existingStore = await Store.findById(id);
-    if (!existingStore)
+    if (!existingStore) {
       throw new ApiError(404, `Store details not found: ${id}`);
+    }
 
-    // 2) (Optional) Prevent userId change
+    // Prevent userId change
     if (data.userId) {
       throw new ApiError(400, "You cannot modify userId of a store profile.");
     }
 
-    // 3) Update record
+    const REQUIRED_FIELDS: (keyof IStoreCreate)[] = [
+      "storeName",
+      "businessEmail",
+      "businessPhone",
+      "country",
+      "logoUrl",
+      "storeDescription",
+    ];
+
+    const finalState = { ...existingStore.toObject(), ...data };
+
+    const missingFields = REQUIRED_FIELDS.filter((field) => !finalState[field]);
+
+    if (missingFields.length > 0) {
+      throw new ApiError(
+        400,
+        `These required fields cannot be empty: ${missingFields.join(", ")}`
+      );
+    }
+
     const updatedStore = await Store.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
