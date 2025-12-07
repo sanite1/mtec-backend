@@ -8,6 +8,10 @@ import {
 import { Product, ProductHistory, ProductVariation } from "../models/product";
 import Order from "../models/order";
 import User from "../models/User";
+import {
+  createOrderPendingPaymentTodo,
+  createOrderShippingTodo,
+} from "./todo.service";
 
 export const createOrderService = async (data: CreateOrderRequest) => {
   const session = await mongoose.startSession();
@@ -176,6 +180,20 @@ export const createOrderService = async (data: CreateOrderRequest) => {
           { session }
         );
       }
+    }
+
+    if (order.paymentStatus === "paid") {
+      await createOrderShippingTodo({
+        userId: data.userId,
+        orderId: String(order._id),
+        orderName: order.orderNumber,
+      });
+    } else {
+      await createOrderPendingPaymentTodo({
+        userId: data.userId,
+        orderId: String(order._id),
+        orderName: order.orderNumber,
+      });
     }
 
     // 6️⃣ Commit & return

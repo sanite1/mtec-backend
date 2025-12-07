@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import ApiError from "../errors/apiError";
 import { Todo } from "../models/todo";
-import { CreateTodoArgs, ITodo } from "../interfaces/todo.interface";
+import { CreateTodoArgs, ITodo, TodoType } from "../interfaces/todo.interface";
 import ApiResponse from "../errors/apiResponse";
 import User from "../models/User";
 
@@ -66,18 +66,20 @@ export const createLowStockTodo = async ({
 };
 
 // 2. ORDER PENDING CONFIRMATION
-export const createOrderPendingTodo = async ({
+export const createOrderPendingPaymentTodo = async ({
   userId,
   orderId,
+  orderName,
 }: {
   userId: string;
   orderId: string;
+  orderName: string;
 }) => {
   return createTodoService({
     userId,
-    type: "order_pending",
-    title: "New Order Pending",
-    description: `Order ${orderId} needs confirmation.`,
+    type: "order_pending_payment",
+    title: "New Order Pending Payment",
+    description: `${orderName} is yet to be confirmed.`,
     metadata: { orderId },
     actionUrl: `/orders/${orderId}`,
     priority: "medium",
@@ -221,19 +223,49 @@ export const completeTodoService = async (todoId: string) => {
 };
 
 // DELETE TODO
-export const deleteTodoService = async (todoId: string) => {
-  if (!Types.ObjectId.isValid(todoId)) {
-    throw new ApiError(400, "Invalid todo ID");
+export async function deleteStoreSetupTodo({
+  userId,
+  type,
+}: {
+  userId: string;
+  type: TodoType;
+}) {
+  try {
+    // Validate ObjectId
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new ApiError(400, "Invalid user ID");
+    }
+
+    // Check if any matching todos exist
+    const todos = await Todo.find({
+      userId,
+      type: type,
+    });
+
+    if (todos.length === 0) {
+      return new ApiResponse(200, "No todos found", {
+        deletedCount: 0,
+      });
+    }
+
+    // Delete them
+    const result = await Todo.deleteMany({
+      userId,
+      type: type,
+    });
+
+    return new ApiResponse(200, "Todos deleted successfully", {
+      deletedCount: result.deletedCount,
+    });
+  } catch (error: any) {
+    console.error("Delete Todos Error:", error);
+
+    if (error instanceof ApiError) throw error;
+
+    throw new ApiError(
+      500,
+      error.message ||
+        "Something went wrong while deleting incomplete store setup todos"
+    );
   }
-
-  const todo = await Todo.findById(todoId);
-  if (!todo) {
-    throw new ApiError(404, `Todo not found: ${todoId}`);
-  }
-
-  await Todo.findByIdAndDelete(todoId);
-
-  return new ApiResponse(200, "Todo deleted successfully", {
-    deletedId: todoId,
-  });
-};
+}

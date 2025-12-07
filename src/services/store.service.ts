@@ -3,7 +3,7 @@ import ApiResponse from "../errors/apiResponse";
 import { IStoreCreate, IStoreUpdate } from "../interfaces/store.interface";
 import User from "../models/User";
 import { Store } from "../models/store.model";
-import { createStoreSetupTodo } from "./todo.service";
+import { createStoreSetupTodo, deleteStoreSetupTodo } from "./todo.service";
 
 export const createStoreService = async (data: IStoreCreate) => {
   try {
@@ -85,12 +85,20 @@ export const updateStoreService = async (id: string, data: IStoreUpdate) => {
     const finalState = { ...existingStore.toObject(), ...data };
 
     const missingFields = REQUIRED_FIELDS.filter((field) => !finalState[field]);
+    const isIncomplete = missingFields.length > 0;
 
-    if (missingFields.length > 0) {
-      throw new ApiError(
-        400,
-        `These required fields cannot be empty: ${missingFields.join(", ")}`
-      );
+    // 5) Automatically create TODO if incomplete
+    if (isIncomplete) {
+      await createStoreSetupTodo({
+        userId: data.userId,
+        missingFields,
+      });
+    } else {
+      // Delete any existing incomplete setup todo
+      await deleteStoreSetupTodo({
+        userId: data.userId,
+        type: "incomplete_store_setup",
+      });
     }
 
     const updatedStore = await Store.findByIdAndUpdate(id, data, {

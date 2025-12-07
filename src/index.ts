@@ -18,6 +18,7 @@ import discountRoutes from "./routes/discount.routes";
 import storetRoutes from "./routes/store.routes";
 import payoutRoutes from "./routes/payoutDetails.route";
 import dashboardRoutes from "./routes/dashboard.routes";
+import todoRoutes from "./routes/todo.routes";
 
 const PORT = 4000;
 
@@ -48,6 +49,7 @@ app.use(cors(corsOption));
   app.use("/api/store", storetRoutes);
   app.use("/api/payout-details", payoutRoutes);
   app.use("/api/dashboard", dashboardRoutes);
+  app.use("/api/todos", todoRoutes);
 
   app.all("*", (req, _res, next) => {
     next(new ApiError(404, `Can't find ${req.originalUrl} on the server!`));

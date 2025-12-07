@@ -7,3 +7,5 @@ const router = Router();
 
 // GET /api/todos/:userId
 router.route("/:userId").get(isAuthenticated, getTodosValidation(), getTodos);
+
+export default router;

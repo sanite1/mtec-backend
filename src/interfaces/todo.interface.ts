@@ -7,10 +7,10 @@ export interface ITodo extends Document {
   description?: string;
 
   type:
-    | "low_stock"
-    | "order_pending"
-    | "order_needs_shipping"
     | "incomplete_store_setup"
+    | "low_stock"
+    | "order_pending_payment"
+    | "order_needs_shipping"
     | "missing_bank_info"
     | "new_message"
     | "unfulfilled_order"
@@ -30,7 +30,7 @@ export interface ITodo extends Document {
 
 export type TodoType =
   | "low_stock"
-  | "order_pending"
+  | "order_pending_payment"
   | "order_needs_shipping"
   | "incomplete_store_setup"
   | "missing_bank_info"
