@@ -120,61 +120,76 @@ export const createOrderService = async (data: CreateOrderRequest) => {
 
     const [order] = await Order.create([orderDoc], { session });
 
-    // 5️⃣ Handle stock & product history if paid/completed
+    // inside your transaction/session block
+    // map to store the initial total stock for each product processed in this order
+    const initialProductTotals = new Map<string, number>();
+
     if (order.paymentStatus === "paid" || order.status === "completed") {
       for (const it of order.items) {
+        const productIdStr = String(it.productId);
+
+        // fetch product fresh using session
         const product = await Product.findById(it.productId).session(session);
         if (!product)
           throw new ApiError(404, `Product not found: ${it.productId}`);
 
+        // store initial product total stock once per product (so multiple items for same product in order are consistent)
+        if (!initialProductTotals.has(productIdStr)) {
+          initialProductTotals.set(productIdStr, product.totalStock ?? 0);
+        }
+        const qtyBeforeProduct = initialProductTotals.get(productIdStr) ?? 0;
+
+        // fetch variation if exists
         const variation = it.variationId
           ? await ProductVariation.findById(it.variationId).session(session)
           : null;
 
-        // 🧮 Always use product.totalStock for quantity tracking
-        const lastHistory = await ProductHistory.findOne({
-          productId: product._id,
-        })
-          .sort({ createdAt: -1 })
-          .session(session);
+        // qty change at product level will be negative of ordered quantity
+        const qtyChangeForProduct = -it.quantity;
 
-        const qtyBefore = lastHistory
-          ? lastHistory.qtyAfter
-          : (product.totalStock ?? 0);
-
-        const qtyChange = -it.quantity;
-        const qtyAfter = Math.max(0, qtyBefore + qtyChange);
-
-        // 🧾 Update variation & product stocks
+        // update variation if present
         if (variation) {
-          variation.stock = Math.max(0, variation.stock - it.quantity);
+          variation.stock = Math.max(0, (variation.stock ?? 0) - it.quantity);
           await variation.save({ session });
 
-          // Recalculate product total stock from all variations
+          // Recalculate product total from all variations (if you have variations)
           const allVars = await ProductVariation.find({
             productId: product._id,
           }).session(session);
-
-          const newTotal = allVars.reduce((sum, v) => sum + (v.stock || 0), 0);
-          product.totalStock = newTotal;
+          const newTotalFromVars = allVars.reduce(
+            (sum, v) => sum + (v.stock ?? 0),
+            0
+          );
+          product.totalStock = newTotalFromVars;
         } else {
-          // If product has no variation, just deduct directly
-          product.totalStock = qtyAfter;
+          // product without variation: deduct directly
+          product.totalStock = Math.max(
+            0,
+            (product.totalStock ?? 0) - it.quantity
+          );
         }
 
+        // save product after updating
         await product.save({ session });
 
-        // 🪶 Create ProductHistory entry (reflecting product-level totals)
+        // qtyAfter should always reflect the current product.totalStock (after the update)
+        const qtyAfterProduct = product.totalStock ?? 0;
+
+        // compute qtyChange recorded in history (qtyAfter - qtyBefore)
+        // keep negative sign for sold (-n)
+        const recordedQtyChange = qtyAfterProduct - qtyBeforeProduct; // should be negative for sold
+
+        // Create ProductHistory entry - use product-level before/after
         await ProductHistory.create(
           [
             {
               productId: product._id,
-              variationId: variation?._id, // still record if a variant was involved
+              variationId: variation?._id ?? null,
               source: "Order",
               activity: "sold",
-              qtyBefore,
-              qtyChange,
-              qtyAfter: product.totalStock, // ✅ always reflect total product stock
+              qtyBefore: qtyBeforeProduct,
+              qtyChange: recordedQtyChange,
+              qtyAfter: qtyAfterProduct,
             },
           ],
           { session }
@@ -461,29 +476,33 @@ export const updateOrderStatusService = async (id: string, status: string) => {
     // --- Handle transition logic ---
 
     /**
-     * ✅ When moving to COMPLETED
-     * Deduct stock, record "sold" history, and mark payment as paid.
+     * COMPLETED → Deduct stock + record sold history
      */
     if (status === "completed" && oldStatus !== "completed") {
+      const initialProductTotals = new Map<string, number>();
+
       for (const item of order.items) {
+        const productIdStr = String(item.productId);
+
         const product = await Product.findById(item.productId).session(session);
         if (!product)
           throw new ApiError(404, `Product not found: ${item.productId}`);
+
+        // store qtyBefore ONCE per product
+        if (!initialProductTotals.has(productIdStr)) {
+          initialProductTotals.set(productIdStr, product.totalStock ?? 0);
+        }
+        const qtyBefore = initialProductTotals.get(productIdStr) ?? 0;
 
         const variation = item.variationId
           ? await ProductVariation.findById(item.variationId).session(session)
           : null;
 
-        const qtyBefore = product.totalStock ?? 0;
-        const qtyChange = -item.quantity;
-        const qtyAfter = Math.max(0, qtyBefore + qtyChange);
-
-        // 🔄 Update stock levels
+        // Deduction
         if (variation) {
           variation.stock = Math.max(0, (variation.stock ?? 0) - item.quantity);
           await variation.save({ session });
 
-          // Recalculate total stock for product
           const allVars = await ProductVariation.find({
             productId: product._id,
           }).session(session);
@@ -492,22 +511,27 @@ export const updateOrderStatusService = async (id: string, status: string) => {
             0
           );
         } else {
-          product.totalStock = qtyAfter;
+          product.totalStock = Math.max(
+            0,
+            (product.totalStock ?? 0) - item.quantity
+          );
         }
 
         await product.save({ session });
 
-        // 🪶 Add ProductHistory entry
+        const qtyAfter = product.totalStock ?? 0;
+        const qtyChange = qtyAfter - qtyBefore;
+
         await ProductHistory.create(
           [
             {
               productId: product._id,
-              variationId: variation?._id,
+              variationId: variation?._id ?? null,
               source: "Order",
               activity: "sold",
               qtyBefore,
               qtyChange,
-              qtyAfter: product.totalStock,
+              qtyAfter,
               referenceId: order._id,
             },
           ],
@@ -519,28 +543,31 @@ export const updateOrderStatusService = async (id: string, status: string) => {
     }
 
     /**
-     * ✅ When moving to CANCELLED
-     * - If previously completed → restock and add "returned" history.
-     * - If not completed → just mark as cancelled (no stock changes).
+     * CANCELLED → Restock only if previously completed
      */
     if (status === "cancelled") {
       if (oldStatus === "completed") {
+        const initialProductTotals = new Map<string, number>();
+
         for (const item of order.items) {
+          const productIdStr = String(item.productId);
+
           const product = await Product.findById(item.productId).session(
             session
           );
           if (!product)
             throw new ApiError(404, `Product not found: ${item.productId}`);
 
+          if (!initialProductTotals.has(productIdStr)) {
+            initialProductTotals.set(productIdStr, product.totalStock ?? 0);
+          }
+          const qtyBefore = initialProductTotals.get(productIdStr) ?? 0;
+
           const variation = item.variationId
             ? await ProductVariation.findById(item.variationId).session(session)
             : null;
 
-          const qtyBefore = product.totalStock ?? 0;
-          const qtyChange = item.quantity;
-          const qtyAfter = qtyBefore + qtyChange;
-
-          // 🔄 Update stock
+          // Restock
           if (variation) {
             variation.stock = (variation.stock ?? 0) + item.quantity;
             await variation.save({ session });
@@ -553,22 +580,24 @@ export const updateOrderStatusService = async (id: string, status: string) => {
               0
             );
           } else {
-            product.totalStock = qtyAfter;
+            product.totalStock = (product.totalStock ?? 0) + item.quantity;
           }
 
           await product.save({ session });
 
-          // 🪶 Record "returned" ProductHistory entry
+          const qtyAfter = product.totalStock ?? 0;
+          const qtyChange = qtyAfter - qtyBefore;
+
           await ProductHistory.create(
             [
               {
                 productId: product._id,
-                variationId: variation?._id,
+                variationId: variation?._id ?? null,
                 source: "Order",
                 activity: "returned",
                 qtyBefore,
                 qtyChange,
-                qtyAfter: product.totalStock,
+                qtyAfter,
                 referenceId: order._id,
               },
             ],
@@ -576,11 +605,9 @@ export const updateOrderStatusService = async (id: string, status: string) => {
           );
         }
 
-        // 🔁 Update payment status
         order.paymentStatus =
           order.paymentStatus === "paid" ? "refunded" : "unpaid";
       } else {
-        // Not completed yet → no stock change
         order.paymentStatus =
           order.paymentStatus === "paid" ? "refunded" : "unpaid";
       }
@@ -620,7 +647,8 @@ export const updateOrderPaymentService = async (
 
     // 2️⃣ Handle transitions
     if (paymentStatus === "paid" && oldPaymentStatus !== "paid") {
-      // 💰 Mark as paid → Deduct stock if not yet deducted
+      const initialProductTotals = new Map<string, number>();
+
       for (const item of order.items) {
         const product = await Product.findById(item.productId).session(session);
         if (!product)
@@ -630,62 +658,68 @@ export const updateOrderPaymentService = async (
           ? await ProductVariation.findById(item.variationId).session(session)
           : null;
 
-        // ✅ Check if this specific order already deducted stock
+        const productIdStr = String(product._id);
+
+        // Check if stock already deducted for THIS order + THIS variation
         const alreadySold = await ProductHistory.findOne({
           productId: product._id,
-          variationId: variation ? variation._id : { $exists: false },
+          variationId: variation?._id ?? null,
           source: "Order",
-          sourceId: order._id, // associate with order
+          sourceId: order._id,
           activity: "sold",
         }).session(session);
 
-        if (!alreadySold) {
-          const qtyBefore = variation
-            ? variation.stock
-            : (product.totalStock ?? 0);
-          const qtyChange = -item.quantity;
+        if (alreadySold) continue;
 
-          // Update stock
-          if (variation) {
-            variation.stock = Math.max(0, variation.stock - item.quantity);
-            await variation.save({ session });
+        // Store initial product stock ONCE like create-order does
+        if (!initialProductTotals.has(productIdStr)) {
+          initialProductTotals.set(productIdStr, product.totalStock ?? 0);
+        }
+        const qtyBeforeProduct = initialProductTotals.get(productIdStr) ?? 0;
 
-            const allVars = await ProductVariation.find({
-              productId: product._id,
-            }).session(session);
+        // Deduct variation-level stock
+        if (variation) {
+          variation.stock = Math.max(0, (variation.stock ?? 0) - item.quantity);
+          await variation.save({ session });
 
-            product.totalStock = allVars.reduce(
-              (sum, v) => sum + (v.stock ?? 0),
-              0
-            );
-          } else {
-            product.totalStock = Math.max(
-              0,
-              (product.totalStock ?? 0) - item.quantity
-            );
-          }
-
-          await product.save({ session });
-
-          await ProductHistory.create(
-            [
-              {
-                productId: product._id,
-                variationId: variation?._id,
-                source: "Order",
-                sourceId: order._id,
-                activity: "sold",
-                qtyBefore,
-                qtyChange,
-                qtyAfter: variation ? variation.stock : product.totalStock,
-              },
-            ],
-            { session }
+          const allVars = await ProductVariation.find({
+            productId: product._id,
+          }).session(session);
+          product.totalStock = allVars.reduce(
+            (sum, v) => sum + (v.stock ?? 0),
+            0
+          );
+        } else {
+          product.totalStock = Math.max(
+            0,
+            (product.totalStock ?? 0) - item.quantity
           );
         }
+
+        await product.save({ session });
+
+        const qtyAfterProduct = product.totalStock ?? 0;
+
+        const recordedQtyChange = qtyAfterProduct - qtyBeforeProduct;
+
+        await ProductHistory.create(
+          [
+            {
+              productId: product._id,
+              variationId: variation?._id ?? null,
+              source: "Order",
+              sourceId: order._id,
+              activity: "sold",
+              qtyBefore: qtyBeforeProduct,
+              qtyChange: recordedQtyChange,
+              qtyAfter: qtyAfterProduct,
+            },
+          ],
+          { session }
+        );
       }
 
-      order.status = "completed"; // sync
+      order.status = "completed";
     }
 
     // 🔁 Handle refund → restock

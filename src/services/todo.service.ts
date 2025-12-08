@@ -78,7 +78,7 @@ export const createOrderPendingPaymentTodo = async ({
   return createTodoService({
     userId,
     type: "order_pending_payment",
-    title: "New Order Pending Payment",
+    title: `${orderName} - Pending Payment`,
     description: `${orderName} is yet to be confirmed.`,
     metadata: { orderId },
     actionUrl: `/orders/${orderId}`,

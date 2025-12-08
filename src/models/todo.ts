@@ -17,7 +17,7 @@ const TodoSchema = new Schema<ITodo>(
       type: String,
       enum: [
         "low_stock",
-        "order_pending",
+        "order_pending_payment",
         "order_needs_shipping",
         "incomplete_store_setup",
         "missing_bank_info",
