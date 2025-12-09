@@ -9,6 +9,7 @@ import { Product, ProductHistory, ProductVariation } from "../models/product";
 import Order from "../models/order";
 import User from "../models/User";
 import {
+  createLowStockTodo,
   createOrderPendingPaymentTodo,
   createOrderShippingTodo,
 } from "./todo.service";
@@ -170,7 +171,15 @@ export const createOrderService = async (data: CreateOrderRequest) => {
         }
 
         // save product after updating
-        await product.save({ session });
+        await product.save({ session }).then((savedProduct) => {
+          // callback logic
+          createLowStockTodo({
+            userId: String(savedProduct.userId),
+            productId: String(savedProduct._id),
+            productName: savedProduct.name,
+            currentStock: savedProduct.totalStock,
+          });
+        });
 
         // qtyAfter should always reflect the current product.totalStock (after the update)
         const qtyAfterProduct = product.totalStock ?? 0;
@@ -421,7 +430,15 @@ export const cancelOrderService = async (id: string) => {
           product.totalStock = (product.totalStock ?? 0) + item.quantity;
         }
 
-        await product.save({ session });
+        await product.save({ session }).then((savedProduct) => {
+          // callback logic
+          createLowStockTodo({
+            userId: String(savedProduct.userId),
+            productId: String(savedProduct._id),
+            productName: savedProduct.name,
+            currentStock: savedProduct.totalStock,
+          });
+        });
 
         // 🪶 Log the reversal in ProductHistory
         await ProductHistory.create(
@@ -517,7 +534,15 @@ export const updateOrderStatusService = async (id: string, status: string) => {
           );
         }
 
-        await product.save({ session });
+        await product.save({ session }).then((savedProduct) => {
+          // callback logic
+          createLowStockTodo({
+            userId: String(savedProduct.userId),
+            productId: String(savedProduct._id),
+            productName: savedProduct.name,
+            currentStock: savedProduct.totalStock,
+          });
+        });
 
         const qtyAfter = product.totalStock ?? 0;
         const qtyChange = qtyAfter - qtyBefore;
@@ -583,7 +608,15 @@ export const updateOrderStatusService = async (id: string, status: string) => {
             product.totalStock = (product.totalStock ?? 0) + item.quantity;
           }
 
-          await product.save({ session });
+          await product.save({ session }).then((savedProduct) => {
+            // callback logic
+            createLowStockTodo({
+              userId: String(savedProduct.userId),
+              productId: String(savedProduct._id),
+              productName: savedProduct.name,
+              currentStock: savedProduct.totalStock,
+            });
+          });
 
           const qtyAfter = product.totalStock ?? 0;
           const qtyChange = qtyAfter - qtyBefore;
@@ -696,7 +729,15 @@ export const updateOrderPaymentService = async (
           );
         }
 
-        await product.save({ session });
+        await product.save({ session }).then((savedProduct) => {
+          // callback logic
+          createLowStockTodo({
+            userId: String(savedProduct.userId),
+            productId: String(savedProduct._id),
+            productName: savedProduct.name,
+            currentStock: savedProduct.totalStock,
+          });
+        });
 
         const qtyAfterProduct = product.totalStock ?? 0;
 
@@ -754,7 +795,15 @@ export const updateOrderPaymentService = async (
           product.totalStock = qtyBefore + qtyChange;
         }
 
-        await product.save({ session });
+        await product.save({ session }).then((savedProduct) => {
+          // callback logic
+          createLowStockTodo({
+            userId: String(savedProduct.userId),
+            productId: String(savedProduct._id),
+            productName: savedProduct.name,
+            currentStock: savedProduct.totalStock,
+          });
+        });
 
         await ProductHistory.create(
           [

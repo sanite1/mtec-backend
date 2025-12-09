@@ -8,6 +8,7 @@ import mongoose, { FilterQuery } from "mongoose";
 import { ProductFilterParams } from "../interfaces/product.interface";
 import ApiError from "../errors/apiError";
 import User from "../models/User";
+import { createLowStockTodo } from "./todo.service";
 
 export const createProductService = async (data: CreateProductRequest) => {
   const hasVariations =
@@ -295,7 +296,14 @@ export const updateProductService = async (
       }
     });
 
-    await product.save({ session });
+    await product.save({ session }).then((savedProduct) => {
+      createLowStockTodo({
+        userId: String(savedProduct.userId),
+        productId: String(savedProduct._id),
+        productName: savedProduct.name,
+        currentStock: savedProduct.totalStock,
+      });
+    });
 
     // 4️⃣ Create a history record if totalStock changed
     const qtyBefore = prevTotalStock;
@@ -464,7 +472,14 @@ export const adjustProductQuantityService = async (
     const qtyAfter = Math.max(0, qtyBefore + adjustment);
 
     product.totalStock = qtyAfter;
-    await product.save({ session });
+    await product.save({ session }).then((savedProduct) => {
+      createLowStockTodo({
+        userId: String(savedProduct.userId),
+        productId: String(savedProduct._id),
+        productName: savedProduct.name,
+        currentStock: savedProduct.totalStock,
+      });
+    });
 
     // Log in history
     await ProductHistory.create(
@@ -538,7 +553,14 @@ export const updateProductVariationService = async (
       const qtyAfter = totalStock;
 
       product.totalStock = totalStock;
-      await product.save({ session });
+      await product.save({ session }).then((savedProduct) => {
+        createLowStockTodo({
+          userId: String(savedProduct.userId),
+          productId: String(savedProduct._id),
+          productName: savedProduct.name,
+          currentStock: savedProduct.totalStock,
+        });
+      });
 
       await ProductHistory.create(
         [
