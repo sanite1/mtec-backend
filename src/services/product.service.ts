@@ -9,6 +9,7 @@ import { ProductFilterParams } from "../interfaces/product.interface";
 import ApiError from "../errors/apiError";
 import User from "../models/User";
 import { createLowStockTodo } from "./todo.service";
+import { Todo } from "../models/todo";
 
 export const createProductService = async (data: CreateProductRequest) => {
   const hasVariations =
@@ -296,13 +297,21 @@ export const updateProductService = async (
       }
     });
 
-    await product.save({ session }).then((savedProduct) => {
-      createLowStockTodo({
-        userId: String(savedProduct.userId),
-        productId: String(savedProduct._id),
-        productName: savedProduct.name,
-        currentStock: savedProduct.totalStock,
-      });
+    await product.save({ session }).then(async (savedProduct) => {
+      if (savedProduct.totalStock <= 3) {
+        createLowStockTodo({
+          userId: String(savedProduct.userId),
+          productId: String(savedProduct._id),
+          productName: savedProduct.name,
+          currentStock: savedProduct.totalStock,
+        });
+      } else {
+        await Todo.deleteMany({
+          userId: String(savedProduct.userId),
+          "metadata.productId": String(savedProduct._id),
+          type: "low_stock",
+        });
+      }
     });
 
     // 4️⃣ Create a history record if totalStock changed
@@ -472,13 +481,21 @@ export const adjustProductQuantityService = async (
     const qtyAfter = Math.max(0, qtyBefore + adjustment);
 
     product.totalStock = qtyAfter;
-    await product.save({ session }).then((savedProduct) => {
-      createLowStockTodo({
-        userId: String(savedProduct.userId),
-        productId: String(savedProduct._id),
-        productName: savedProduct.name,
-        currentStock: savedProduct.totalStock,
-      });
+    await product.save({ session }).then(async (savedProduct) => {
+      if (savedProduct.totalStock <= 3) {
+        createLowStockTodo({
+          userId: String(savedProduct.userId),
+          productId: String(savedProduct._id),
+          productName: savedProduct.name,
+          currentStock: savedProduct.totalStock,
+        });
+      } else {
+        await Todo.deleteMany({
+          userId: String(savedProduct.userId),
+          "metadata.productId": String(savedProduct._id),
+          type: "low_stock",
+        });
+      }
     });
 
     // Log in history
@@ -553,13 +570,21 @@ export const updateProductVariationService = async (
       const qtyAfter = totalStock;
 
       product.totalStock = totalStock;
-      await product.save({ session }).then((savedProduct) => {
-        createLowStockTodo({
-          userId: String(savedProduct.userId),
-          productId: String(savedProduct._id),
-          productName: savedProduct.name,
-          currentStock: savedProduct.totalStock,
-        });
+      await product.save({ session }).then(async (savedProduct) => {
+        if (savedProduct.totalStock <= 3) {
+          createLowStockTodo({
+            userId: String(savedProduct.userId),
+            productId: String(savedProduct._id),
+            productName: savedProduct.name,
+            currentStock: savedProduct.totalStock,
+          });
+        } else {
+          await Todo.deleteMany({
+            userId: String(savedProduct.userId),
+            "metadata.productId": String(savedProduct._id),
+            type: "low_stock",
+          });
+        }
       });
 
       await ProductHistory.create(

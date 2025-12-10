@@ -13,6 +13,7 @@ import {
   createOrderPendingPaymentTodo,
   createOrderShippingTodo,
 } from "./todo.service";
+import { Todo } from "../models/todo";
 
 export const createOrderService = async (data: CreateOrderRequest) => {
   const session = await mongoose.startSession();
@@ -171,14 +172,21 @@ export const createOrderService = async (data: CreateOrderRequest) => {
         }
 
         // save product after updating
-        await product.save({ session }).then((savedProduct) => {
-          // callback logic
-          createLowStockTodo({
-            userId: String(savedProduct.userId),
-            productId: String(savedProduct._id),
-            productName: savedProduct.name,
-            currentStock: savedProduct.totalStock,
-          });
+        await product.save({ session }).then(async (savedProduct) => {
+          if (savedProduct.totalStock <= 3) {
+            createLowStockTodo({
+              userId: String(savedProduct.userId),
+              productId: String(savedProduct._id),
+              productName: savedProduct.name,
+              currentStock: savedProduct.totalStock,
+            });
+          } else {
+            await Todo.deleteMany({
+              userId: String(savedProduct.userId),
+              "metadata.productId": String(savedProduct._id),
+              type: "low_stock",
+            });
+          }
         });
 
         // qtyAfter should always reflect the current product.totalStock (after the update)
@@ -430,14 +438,21 @@ export const cancelOrderService = async (id: string) => {
           product.totalStock = (product.totalStock ?? 0) + item.quantity;
         }
 
-        await product.save({ session }).then((savedProduct) => {
-          // callback logic
-          createLowStockTodo({
-            userId: String(savedProduct.userId),
-            productId: String(savedProduct._id),
-            productName: savedProduct.name,
-            currentStock: savedProduct.totalStock,
-          });
+        await product.save({ session }).then(async (savedProduct) => {
+          if (savedProduct.totalStock <= 3) {
+            createLowStockTodo({
+              userId: String(savedProduct.userId),
+              productId: String(savedProduct._id),
+              productName: savedProduct.name,
+              currentStock: savedProduct.totalStock,
+            });
+          } else {
+            await Todo.deleteMany({
+              userId: String(savedProduct.userId),
+              "metadata.productId": String(savedProduct._id),
+              type: "low_stock",
+            });
+          }
         });
 
         // 🪶 Log the reversal in ProductHistory
@@ -534,14 +549,21 @@ export const updateOrderStatusService = async (id: string, status: string) => {
           );
         }
 
-        await product.save({ session }).then((savedProduct) => {
-          // callback logic
-          createLowStockTodo({
-            userId: String(savedProduct.userId),
-            productId: String(savedProduct._id),
-            productName: savedProduct.name,
-            currentStock: savedProduct.totalStock,
-          });
+        await product.save({ session }).then(async (savedProduct) => {
+          if (savedProduct.totalStock <= 3) {
+            createLowStockTodo({
+              userId: String(savedProduct.userId),
+              productId: String(savedProduct._id),
+              productName: savedProduct.name,
+              currentStock: savedProduct.totalStock,
+            });
+          } else {
+            await Todo.deleteMany({
+              userId: String(savedProduct.userId),
+              "metadata.productId": String(savedProduct._id),
+              type: "low_stock",
+            });
+          }
         });
 
         const qtyAfter = product.totalStock ?? 0;
@@ -608,14 +630,21 @@ export const updateOrderStatusService = async (id: string, status: string) => {
             product.totalStock = (product.totalStock ?? 0) + item.quantity;
           }
 
-          await product.save({ session }).then((savedProduct) => {
-            // callback logic
-            createLowStockTodo({
-              userId: String(savedProduct.userId),
-              productId: String(savedProduct._id),
-              productName: savedProduct.name,
-              currentStock: savedProduct.totalStock,
-            });
+          await product.save({ session }).then(async (savedProduct) => {
+            if (savedProduct.totalStock <= 3) {
+              createLowStockTodo({
+                userId: String(savedProduct.userId),
+                productId: String(savedProduct._id),
+                productName: savedProduct.name,
+                currentStock: savedProduct.totalStock,
+              });
+            } else {
+              await Todo.deleteMany({
+                userId: String(savedProduct.userId),
+                "metadata.productId": String(savedProduct._id),
+                type: "low_stock",
+              });
+            }
           });
 
           const qtyAfter = product.totalStock ?? 0;
@@ -729,14 +758,21 @@ export const updateOrderPaymentService = async (
           );
         }
 
-        await product.save({ session }).then((savedProduct) => {
-          // callback logic
-          createLowStockTodo({
-            userId: String(savedProduct.userId),
-            productId: String(savedProduct._id),
-            productName: savedProduct.name,
-            currentStock: savedProduct.totalStock,
-          });
+        await product.save({ session }).then(async (savedProduct) => {
+          if (savedProduct.totalStock <= 3) {
+            createLowStockTodo({
+              userId: String(savedProduct.userId),
+              productId: String(savedProduct._id),
+              productName: savedProduct.name,
+              currentStock: savedProduct.totalStock,
+            });
+          } else {
+            await Todo.deleteMany({
+              userId: String(savedProduct.userId),
+              "metadata.productId": String(savedProduct._id),
+              type: "low_stock",
+            });
+          }
         });
 
         const qtyAfterProduct = product.totalStock ?? 0;
@@ -795,14 +831,21 @@ export const updateOrderPaymentService = async (
           product.totalStock = qtyBefore + qtyChange;
         }
 
-        await product.save({ session }).then((savedProduct) => {
-          // callback logic
-          createLowStockTodo({
-            userId: String(savedProduct.userId),
-            productId: String(savedProduct._id),
-            productName: savedProduct.name,
-            currentStock: savedProduct.totalStock,
-          });
+        await product.save({ session }).then(async (savedProduct) => {
+          if (savedProduct.totalStock <= 3) {
+            createLowStockTodo({
+              userId: String(savedProduct.userId),
+              productId: String(savedProduct._id),
+              productName: savedProduct.name,
+              currentStock: savedProduct.totalStock,
+            });
+          } else {
+            await Todo.deleteMany({
+              userId: String(savedProduct.userId),
+              "metadata.productId": String(savedProduct._id),
+              type: "low_stock",
+            });
+          }
         });
 
         await ProductHistory.create(

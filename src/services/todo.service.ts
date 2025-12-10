@@ -28,7 +28,7 @@ export const createTodoService = async (args: CreateTodoArgs) => {
       priority: args.priority || "medium",
     });
 
-    return new ApiResponse(200, "Tax Retrieved Successfully", todo);
+    return new ApiResponse(200, "Todo Creeated Successfully", todo);
   } catch (error: any) {
     if (error instanceof ApiError) throw error;
     console.error("Create Tax Error:", error);
