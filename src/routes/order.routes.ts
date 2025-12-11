@@ -6,6 +6,7 @@ import {
   getOrderStatsController,
   getOrders,
   updateOrderPaymentController,
+  updateOrderShippingController,
   updateOrderStatusController,
 } from "../controllers/order.controller";
 import {
@@ -16,6 +17,7 @@ import {
   getSingleOrderValidation,
   updateOrderStatusValidation,
   updatePaymentStatusValidation,
+  updateShippingStatusValidation,
 } from "../validations/order.validation";
 // optionally add isAuthenticated middleware if you want only logged-in users to create orders
 import { isAuthenticated } from "../middlewares/authenticatedMiddleWare";
@@ -48,6 +50,15 @@ router
     updatePaymentStatusValidation(),
     updateOrderPaymentController
   );
+
+router
+  .route("/:id/shipping")
+  .patch(
+    isAuthenticated,
+    updateShippingStatusValidation(),
+    updateOrderShippingController
+  );
+
 router
   .route("/:id")
   .get(isAuthenticated, getSingleOrderValidation(), getOrderByIdController)

@@ -25,6 +25,12 @@ export interface ShippingAddress {
 }
 
 export type OrderStatus = "pending" | "completed" | "cancelled" | "refunded";
+export type shippingStatus =
+  | "pending"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
 export type PaymentStatus = "unpaid" | "paid" | "refunded";
 export type PaymentMethod = "card" | "bank_transfer" | "cash" | "other";
 

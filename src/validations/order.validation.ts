@@ -111,3 +111,15 @@ export const updatePaymentStatusValidation = () =>
         .required(),
     }),
   });
+
+export const updateShippingStatusValidation = () =>
+  validate({
+    params: Joi.object({
+      id: Joi.string().required(),
+    }),
+    body: Joi.object({
+      shippingStatus: Joi.string()
+        .valid("pending", "processing", "shipped", "delivered")
+        .required(),
+    }),
+  });

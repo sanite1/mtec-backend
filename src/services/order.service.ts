@@ -4,6 +4,7 @@ import ApiResponse from "../errors/apiResponse";
 import {
   CreateOrderRequest,
   GetOrdersParams,
+  shippingStatus,
 } from "../interfaces/order.interface";
 import { Product, ProductHistory, ProductVariation } from "../models/product";
 import Order from "../models/order";
@@ -108,6 +109,7 @@ export const createOrderService = async (data: CreateOrderRequest) => {
         : undefined,
       userId: data.userId,
       status: data.orderStatus || "pending",
+      shippingStatus: data.paymentStatus === "paid" ? "processing" : "pending",
       paymentStatus: data.paymentStatus || "unpaid",
       paymentMethod: data.paymentMethod || "other",
       items: itemsProcessed,
@@ -170,7 +172,6 @@ export const createOrderService = async (data: CreateOrderRequest) => {
             (product.totalStock ?? 0) - it.quantity
           );
         }
-
         // save product after updating
         await product.save({ session }).then(async (savedProduct) => {
           if (savedProduct.totalStock <= 3) {
@@ -477,7 +478,23 @@ export const cancelOrderService = async (id: string) => {
     order.status = "cancelled";
     order.paymentStatus =
       order.paymentStatus === "paid" ? "refunded" : "unpaid";
-    await order.save({ session });
+    await order.save({ session }).then(async (savedOrder) => {
+      if (
+        savedOrder.paymentStatus === "paid" ||
+        savedOrder.paymentStatus === "refunded"
+      ) {
+        await Todo.deleteMany({
+          userId: String(savedOrder.userId),
+          "metadata.orderId": String(savedOrder._id),
+          type: "order_pending_payment",
+        });
+        await createOrderShippingTodo({
+          userId: String(savedOrder.userId),
+          orderId: String(savedOrder._id),
+          orderName: savedOrder.orderNumber,
+        });
+      }
+    });
 
     // 4️⃣ Commit transaction
     await session.commitTransaction();
@@ -587,6 +604,7 @@ export const updateOrderStatusService = async (id: string, status: string) => {
       }
 
       order.paymentStatus = "paid";
+      order.shippingStatus = "processing";
     }
 
     /**
@@ -673,11 +691,29 @@ export const updateOrderStatusService = async (id: string, status: string) => {
         order.paymentStatus =
           order.paymentStatus === "paid" ? "refunded" : "unpaid";
       }
+
+      order.shippingStatus = "cancelled";
     }
 
     // 3️⃣ Save order with new status
     order.status = status;
-    await order.save({ session });
+    await order.save({ session }).then(async (savedOrder) => {
+      if (
+        savedOrder.paymentStatus === "paid" ||
+        savedOrder.paymentStatus === "refunded"
+      ) {
+        await Todo.deleteMany({
+          userId: String(savedOrder.userId),
+          "metadata.orderId": String(savedOrder._id),
+          type: "order_pending_payment",
+        });
+        await createOrderShippingTodo({
+          userId: String(savedOrder.userId),
+          orderId: String(savedOrder._id),
+          orderName: savedOrder.orderNumber,
+        });
+      }
+    });
 
     await session.commitTransaction();
     session.endSession();
@@ -797,6 +833,7 @@ export const updateOrderPaymentService = async (
       }
 
       order.status = "completed";
+      order.shippingStatus = "processing";
     }
 
     // 🔁 Handle refund → restock
@@ -866,16 +903,92 @@ export const updateOrderPaymentService = async (
       }
 
       order.status = "cancelled";
+      order.shippingStatus = "cancelled";
     }
 
     // 3️⃣ Save updates
     order.paymentStatus = paymentStatus;
-    await order.save({ session });
-
+    await order.save({ session }).then(async (savedOrder) => {
+      if (
+        savedOrder.paymentStatus === "paid" ||
+        savedOrder.paymentStatus === "refunded"
+      ) {
+        await Todo.deleteMany({
+          userId: String(savedOrder.userId),
+          "metadata.orderId": String(savedOrder._id),
+          type: "order_pending_payment",
+        });
+        await createOrderShippingTodo({
+          userId: String(savedOrder.userId),
+          orderId: String(savedOrder._id),
+          orderName: savedOrder.orderNumber,
+        });
+      }
+    });
     await session.commitTransaction();
     session.endSession();
 
     return new ApiResponse(200, "Payment status updated successfully", order);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+export const updateOrderShippingService = async (
+  id: string,
+  shippingStatus: string
+) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1️⃣ Find the order
+    const order = await Order.findById(id).session(session);
+    if (!order) throw new ApiError(404, "Order not found");
+
+    const oldShippingStatus: shippingStatus =
+      order.shippingStatus as shippingStatus;
+
+    if (oldShippingStatus === shippingStatus) {
+      throw new ApiError(400, `Shipping status is already '${shippingStatus}'`);
+    }
+
+    // 2️⃣ Validate transitions (optional but recommended)
+    const validTransitions: any = {
+      pending: ["processing"],
+      processing: ["shipped"],
+      shipped: ["delivered"],
+      delivered: [], // final state
+    };
+
+    if (!validTransitions[oldShippingStatus].includes(shippingStatus)) {
+      throw new ApiError(
+        400,
+        `Invalid transition: cannot move shipping status from '${oldShippingStatus}' to '${shippingStatus}'`
+      );
+    }
+
+    // 3️⃣ Update
+    order.shippingStatus = shippingStatus;
+
+    await order.save({ session }).then(async (savedOrder) => {
+      // Clean up any past shipping todos for this order
+
+      if (shippingStatus === "shipped" || shippingStatus === "delivered") {
+        await Todo.deleteMany({
+          userId: String(savedOrder.userId),
+          "metadata.orderId": String(savedOrder._id),
+          type: "order_needs_shipping",
+        });
+      }
+    });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return new ApiResponse(200, "Shipping status updated successfully", order);
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

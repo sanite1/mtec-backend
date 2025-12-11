@@ -6,6 +6,7 @@ import {
   getOrderStatsService,
   getOrdersService,
   updateOrderPaymentService,
+  updateOrderShippingService,
   updateOrderStatusService,
 } from "../services/order.service";
 import ApiError from "../errors/apiError";
@@ -141,6 +142,22 @@ export const updateOrderPaymentController = async (
     const { paymentStatus } = req.body;
 
     const result = await updateOrderPaymentService(id, paymentStatus);
+    res.status(result.statusCode).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateOrderShippingController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+    const { shippingStatus } = req.body;
+
+    const result = await updateOrderShippingService(id, shippingStatus);
     res.status(result.statusCode).json(result);
   } catch (error) {
     next(error);

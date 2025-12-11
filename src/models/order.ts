@@ -5,6 +5,7 @@ import {
   OrderStatus,
   PaymentStatus,
   PaymentMethod,
+  shippingStatus,
 } from "../interfaces/order.interface";
 
 const orderItemSchema = new Schema<OrderItem>(
@@ -53,6 +54,11 @@ const orderSchema = new Schema(
       enum: ["pending", "completed", "cancelled", "refunded"],
       default: "pending",
     } as unknown as OrderStatus,
+    shippingStatus: {
+      type: String,
+      enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+      default: "pending",
+    } as unknown as shippingStatus,
     paymentStatus: {
       type: String,
       enum: ["unpaid", "paid", "refunded"],
