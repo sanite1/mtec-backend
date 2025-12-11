@@ -3,7 +3,7 @@ import ApiResponse from "../errors/apiResponse";
 import { IStoreCreate, IStoreUpdate } from "../interfaces/store.interface";
 import User from "../models/User";
 import { Store } from "../models/store.model";
-import { createStoreSetupTodo, deleteStoreSetupTodo } from "./todo.service";
+import { createStoreSetupTodo, deleteTodo } from "./todo.service";
 
 export const createStoreService = async (data: IStoreCreate) => {
   try {
@@ -95,8 +95,8 @@ export const updateStoreService = async (id: string, data: IStoreUpdate) => {
       });
     } else {
       // Delete any existing incomplete setup todo
-      await deleteStoreSetupTodo({
-        userId: data.userId,
+      await deleteTodo({
+        userId: existingStore.userId,
         type: "incomplete_store_setup",
       });
     }

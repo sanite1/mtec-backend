@@ -1,5 +1,6 @@
 import {
   createUserValidation,
+  deleteUserValidation,
   forgotPasswordValidation,
   getUserByIdValidation,
   loginUserValidation,
@@ -13,6 +14,7 @@ import {
 import { Router } from "express";
 import {
   createUser,
+  deleteUser,
   forgotPassword,
   getUserById,
   login,
@@ -34,7 +36,7 @@ router
   .post(
     upload.fields([{ name: "profilePicture", maxCount: 1 }]),
     createUserValidation(),
-    createUser,
+    createUser
   );
 
 router
@@ -44,11 +46,12 @@ router
 router
   .route("/:id")
   .get(isAuthenticated, getUserByIdValidation(), getUserById)
+  .delete(isAuthenticated, deleteUserValidation(), deleteUser)
   .patch(
     isAuthenticated,
     upload.fields([{ name: "profilePicture", maxCount: 1 }]),
     updateUserValidation(),
-    updateUser,
+    updateUser
   );
 
 router.post("/login", loginUserValidation(), login);
@@ -62,12 +65,12 @@ router.get("/verify/:id/:token", verifyUserValidation(), verifyUser);
 router.patch(
   "/reset-password/:id/:token",
   resetPassswordValidation(),
-  resetPassword,
+  resetPassword
 );
 
 router.patch(
   "/update-password/:id",
   updatePassswordValidation(),
-  updatePassword,
+  updatePassword
 );
 export default router;

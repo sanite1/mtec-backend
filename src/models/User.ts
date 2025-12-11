@@ -5,6 +5,8 @@ const userSchema = new Schema<IUser>(
   {
     firstname: { type: String, required: true, trim: true },
     lastname: { type: String, required: true, trim: true },
+    middlename: { type: String, trim: true },
+    phone: { type: String, trim: true },
     email: {
       type: String,
       unique: true,
@@ -25,6 +27,7 @@ const userSchema = new Schema<IUser>(
     verificationToken: { type: String },
     resetToken: { type: String },
     resetTokenExpires: { type: Date },
+    dob: { type: Date },
   },
   {
     timestamps: true,

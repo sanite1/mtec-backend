@@ -17,6 +17,7 @@ import cloudinary, {
 import { sendInvoiceMail } from "../services/nodemailer/mail.service";
 import {
   createUserService,
+  deleteUserService,
   forgotPasswordService,
   getUserByIdService,
   loginService,
@@ -192,6 +193,15 @@ export const updatePassword: ExpresFunction<IPasswordReset> = async (
 ) => {
   try {
     const data = await updatePasswordService(req.params as IdParam, req.body);
+    return res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUser: ExpresFunction = async (req, res, next) => {
+  try {
+    const data = await deleteUserService(req.params as IdParam);
     return res.status(200).json(data);
   } catch (error) {
     next(error);

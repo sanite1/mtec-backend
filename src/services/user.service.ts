@@ -20,6 +20,20 @@ import ApiResponse from "../errors/apiResponse";
 import { IdParam } from "../interfaces/helper.interface";
 import { IUserDecoded } from "../middlewares/authenticatedMiddleWare";
 import { initOnboardingService } from "./onboarding.service";
+import mongoose from "mongoose";
+import { deleteProductService } from "./product.service";
+import { Product } from "../models/product";
+import Discount from "../models/discount";
+import { Todo } from "../models/todo";
+import { Store } from "../models/store.model";
+import Customer from "../models/customer";
+import Order from "../models/order";
+import Onboarding from "../models/onboarding";
+import PayoutDetails from "../models/payoutDetails";
+import Tax from "../models/taxes";
+import Storefront from "../models/storefront";
+import Shipping from "../models/shipping";
+import Location from "../models/location";
 
 const saltRounds = 13;
 
@@ -246,4 +260,55 @@ export const getUserByIdService = async (params: IdParam) => {
     throw new ApiError(400, `User not found`);
   }
   return new ApiResponse(200, "User Found", user);
+};
+
+export const deleteUserService = async (params: IdParam) => {
+  const userId = params.id;
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 🔍 Check if user exists
+    const user = await User.findById(userId).session(session);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // 1️⃣ DELETE ALL PRODUCTS (via their own deletion service)
+    const products = await Product.find({ userId }).session(session);
+
+    for (const product of products) {
+      await deleteProductService(product._id.toString());
+    }
+
+    // 2️⃣ DELETE OTHER MODELS THAT USE userId
+    await Todo.deleteMany({ userId }).session(session);
+    await Store.deleteMany({ userId }).session(session);
+    await Customer.deleteMany({ userId }).session(session);
+    await Order.deleteMany({ userId }).session(session);
+    await Onboarding.deleteMany({ userId }).session(session);
+    await PayoutDetails.deleteMany({ userId }).session(session);
+    await Tax.deleteMany({ userId }).session(session);
+    await Storefront.deleteMany({ userId }).session(session);
+    await Shipping.deleteMany({ userId }).session(session);
+    await Location.deleteMany({ userId }).session(session);
+    await Discount.deleteMany({ userId }).session(session);
+
+    // 3️⃣ DELETE THE USER
+    await User.findByIdAndDelete(userId).session(session);
+
+    // 4️⃣ COMMIT TRANSACTION
+    await session.commitTransaction();
+    session.endSession();
+
+    return new ApiResponse(200, "User deleted successfully", {
+      id: userId,
+      status: "removed",
+      removedProducts: products.length,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };

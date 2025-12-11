@@ -223,7 +223,7 @@ export const completeTodoService = async (todoId: string) => {
 };
 
 // DELETE TODO
-export async function deleteStoreSetupTodo({
+export async function deleteTodo({
   userId,
   type,
 }: {

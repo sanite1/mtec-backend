@@ -42,7 +42,9 @@ export interface IUser extends Document {
   _id: Types.ObjectId;
   firstname: string;
   lastname: string;
+  middlename: string;
   email: string;
+  phone: string;
   phoneNumber: string;
   profilePicture?: string;
   password: string; // Hashed password
@@ -52,6 +54,7 @@ export interface IUser extends Document {
   verificationToken?: string;
   resetToken?: string;
   resetTokenExpires?: Date;
+  dob?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

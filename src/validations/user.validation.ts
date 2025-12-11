@@ -5,6 +5,7 @@ const createUserSchema = {
   body: Joi.object({
     firstname: Joi.string().min(2).required(),
     lastname: Joi.string().required(),
+    phone: Joi.string(),
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(), // Minimum length for security
     role: Joi.string().valid("admin", "instructor", "student").default("admin"),
@@ -17,8 +18,10 @@ const createUserSchema = {
 const updateUserSchema = {
   body: Joi.object({
     firstname: Joi.string().min(2),
+    middlename: Joi.string().allow(""),
     lastname: Joi.string(),
-    phoneNumber: Joi.string(),
+    dob: Joi.date(),
+    phone: Joi.string(),
     role: Joi.string().valid("admin", "instructor", "student"),
     profilePicture: Joi.string().uri(),
     isVerified: Joi.boolean(),
@@ -116,6 +119,19 @@ const sendEmailSchema = {
     user: Joi.string().email().required(),
   }),
 };
+
+const deleteUserSchema = {
+  params: Joi.object({
+    id: Joi.string()
+      .custom((value, helpers) => {
+        if (!Types.ObjectId.isValid(value)) {
+          return helpers.error("any.invalid");
+        }
+        return value;
+      }, "ObjectId validation")
+      .required(),
+  }),
+};
 export const createUserValidation = () => {
   return validate(createUserSchema, { context: true }, { abortEarly: false });
 };
@@ -130,6 +146,9 @@ export const getUserByIdValidation = () => {
 };
 export const loginUserValidation = () => {
   return validate(loginUserSchema, { context: true }, { abortEarly: false });
+};
+export const deleteUserValidation = () => {
+  return validate(deleteUserSchema, { context: true }, { abortEarly: false });
 };
 
 export const refreshTokenValidation = () => {

@@ -117,9 +117,9 @@ export const getProductsByUserService = async ({
     Product.countDocuments(filters),
   ]);
 
-  if (!products.length) {
-    throw new ApiError(404, "No products found for this user");
-  }
+  // if (!products.length) {
+  //   throw new ApiError(404, "No products found for this user");
+  // }
   return new ApiResponse(200, "Products Retrieved Successfully", {
     total,
     currentPage: page,

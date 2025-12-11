@@ -44,6 +44,8 @@ export const updateStoreValidation = () =>
       businessSector: Joi.string().required(),
       slug: Joi.string().required(),
       storeLink: Joi.string().required(),
+      storeColor: Joi.string().required(),
+      isLightColor: Joi.boolean().required(),
       tagline: Joi.string().optional(),
       storeDescription: Joi.string().required(),
 
