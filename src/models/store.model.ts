@@ -18,6 +18,14 @@ const StoreDetailsSchema = new Schema<StoreDetailsDocument>(
     storeColor: { type: String, required: true },
     isLightColor: { type: Boolean, required: true },
 
+    lowStock: { type: Number, required: true },
+    showOutOfStock: { type: Boolean, required: true },
+    showStockCount: { type: Boolean, required: true },
+
+    productNoteEnabled: { type: Boolean, required: true },
+    productNoteTitle: { type: String, required: true },
+    productNotePlaceholder: { type: String, required: true },
+
     businessEmail: { type: String, required: true },
     businessPhone: { type: String, required: true },
     website: { type: String, required: false },

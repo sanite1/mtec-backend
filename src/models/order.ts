@@ -71,6 +71,7 @@ const orderSchema = new Schema(
     } as unknown as PaymentMethod,
     items: [orderItemSchema],
     subtotal: { type: Number, required: true, default: 0 },
+    channel: { type: String, required: true, default: 0 },
     discount: { type: Number, required: false, default: 0 },
     tax: { type: Number, required: false, default: 0 },
     shippingFee: { type: Number, required: false, default: 0 },

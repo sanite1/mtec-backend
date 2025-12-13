@@ -17,6 +17,12 @@ export interface IStoreDetails {
   isLightColor: boolean;
   businessName: string;
   businessSector: string;
+  lowStock?: number;
+  showOutOfStock?: boolean;
+  showStockCount?: boolean;
+  productNoteEnabled?: boolean;
+  productNoteTitle?: string;
+  productNotePlaceholder?: string;
   tagline?: string;
   storeDescription: string;
   createdAt?: Date;
@@ -33,6 +39,12 @@ export interface IStoreCreate {
   slug: string;
   storeLink: string;
   businessEmail: string;
+  lowStock?: number;
+  showOutOfStock?: boolean;
+  showStockCount?: boolean;
+  productNoteEnabled?: boolean;
+  productNoteTitle?: string;
+  productNotePlaceholder?: string;
   businessPhone: string;
   storeColor: string;
   isLightColor: boolean;
@@ -52,6 +64,12 @@ export interface IStoreUpdate {
   storeColor: string;
   isLightColor: boolean;
   zipCode: string;
+  lowStock?: number;
+  showOutOfStock?: boolean;
+  showStockCount?: boolean;
+  productNoteEnabled?: boolean;
+  productNoteTitle?: string;
+  productNotePlaceholder?: string;
   streetAddress: string;
   slug: string;
   storeLink: string;

@@ -114,6 +114,7 @@ export const createOrderService = async (data: CreateOrderRequest) => {
       paymentMethod: data.paymentMethod || "other",
       items: itemsProcessed,
       subtotal,
+      channel: data.channel,
       discount,
       tax,
       shippingFee,
@@ -292,9 +293,9 @@ export const getOrdersService = async ({
     Order.countDocuments(filters),
   ]);
 
-  if (!orders.length) {
-    throw new ApiError(404, "No orders found");
-  }
+  // if (!orders.length) {
+  //   throw new ApiError(404, "No orders found");
+  // }
 
   return new ApiResponse(200, "Orders retrieved successfully", {
     total,
@@ -476,24 +477,30 @@ export const cancelOrderService = async (id: string) => {
 
     // 3️⃣ Update order status
     order.status = "cancelled";
+    order.shippingStatus = "cancelled";
     order.paymentStatus =
       order.paymentStatus === "paid" ? "refunded" : "unpaid";
     await order.save({ session }).then(async (savedOrder) => {
-      if (
-        savedOrder.paymentStatus === "paid" ||
-        savedOrder.paymentStatus === "refunded"
-      ) {
-        await Todo.deleteMany({
-          userId: String(savedOrder.userId),
-          "metadata.orderId": String(savedOrder._id),
-          type: "order_pending_payment",
-        });
-        await createOrderShippingTodo({
-          userId: String(savedOrder.userId),
-          orderId: String(savedOrder._id),
-          orderName: savedOrder.orderNumber,
-        });
-      }
+      await Todo.deleteMany({
+        userId: String(savedOrder.userId),
+        "metadata.orderId": String(savedOrder._id),
+        type: "order_pending_payment",
+      });
+      await Todo.deleteMany({
+        userId: String(savedOrder.userId),
+        "metadata.orderId": String(savedOrder._id),
+        type: "order_needs_shipping",
+      });
+      // await createOrderShippingTodo({
+      //   userId: String(savedOrder.userId),
+      //   orderId: String(savedOrder._id),
+      //   orderName: savedOrder.orderNumber,
+      // });
+      // if (
+      //   savedOrder.paymentStatus === "paid" ||
+      //   savedOrder.paymentStatus === "refunded"
+      // ) {
+      // }
     });
 
     // 4️⃣ Commit transaction

@@ -5,6 +5,7 @@ export const createOrderValidation = () =>
     body: Joi.object({
       userId: Joi.string().required(),
       customerId: Joi.string().optional(),
+      channel: Joi.string().required(),
       items: Joi.array()
         .items(
           Joi.object({

@@ -38,6 +38,7 @@ export type PaymentMethod = "card" | "bank_transfer" | "cash" | "other";
 export interface CreateOrderRequest {
   userId: string; // optional for guest
   customerId?: string; // optional for guest
+  channel: string;
   items: {
     productId: string;
     variationId?: string;
