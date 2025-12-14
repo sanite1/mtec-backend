@@ -26,6 +26,7 @@ export async function initializePaystackPayment(orderId: string) {
     orderId: order._id,
     userId: order.userId,
     reference,
+    orderNumber: order.orderNumber,
     amount: order.total,
     customerEmail: order?.shippingAddress?.email,
   });
@@ -36,7 +37,7 @@ export async function initializePaystackPayment(orderId: string) {
       email: payment.customerEmail,
       amount: payment.amount * 100, // Paystack expects kobo
       reference,
-      callback_url: `${process.env.DOMAIN_NAME}/order-confirmation/${orderId}`,
+      callback_url: `${process.env.STORE_URL}/order-confirmation/${orderId}`,
     },
     {
       headers: {

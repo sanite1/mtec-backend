@@ -6,6 +6,7 @@ import Order from "../models/order";
 import Payment from "../models/payment";
 import { Todo } from "../models/todo";
 import { createOrderShippingTodo } from "../services/todo.service";
+import { updateOrderPaymentService } from "../services/order.service";
 
 export const initializePayment = async (
   req: Request,
@@ -41,25 +42,11 @@ export async function paystackWebhook(req: Request, res: Response) {
     const payment = await Payment.findOne({ reference });
     if (!payment) return res.sendStatus(200);
 
-    payment.status = "paid";
+    payment.status = "pending";
+    payment.method = event.data.channel;
+    payment.paidAt = new Date();
     await payment.save();
-
-    await Order.findByIdAndUpdate(payment.orderId, {
-      paymentStatus: "paid",
-      status: "completed",
-      shippingStatus: "processing",
-    }).then(async (savedOrder) => {
-      await Todo.deleteMany({
-        userId: String(savedOrder?.userId),
-        "metadata.orderId": String(savedOrder?._id),
-        type: "order_pending_payment",
-      });
-      await createOrderShippingTodo({
-        userId: String(savedOrder?.userId),
-        orderId: String(savedOrder?._id),
-        orderName: savedOrder?.orderNumber || "",
-      });
-    });
+    await updateOrderPaymentService(payment.orderId.toString(), "paid");
   }
 
   res.sendStatus(200);
