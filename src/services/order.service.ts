@@ -225,6 +225,7 @@ export const createOrderService = async (data: CreateOrderRequest) => {
         reference,
         method: order.paymentMethod,
         channel: order.channel,
+        ...(order.paymentStatus === "paid" && { paidAt: new Date() }),
         status: order.paymentStatus === "paid" ? "paid" : "pending",
         orderNumber: order.orderNumber,
         amount: order.total,
@@ -999,6 +1000,7 @@ export const updateOrderPaymentService = async (
         const wallet = await Wallet.findOne({ userId: order.userId });
         if (payment && payment.status !== "paid") {
           payment.status = "paid";
+          payment.paidAt = new Date();
           await payment.save();
           if (wallet) {
             wallet.pendingBalance += order.total;

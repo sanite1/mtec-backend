@@ -7,6 +7,11 @@ import { Todo } from "../models/todo";
 import { createOrderShippingTodo } from "../services/todo.service";
 import { updateOrderPaymentService } from "../services/order.service";
 import { Payment, Wallet } from "../models/payment";
+import { ExpresFunction } from "../interfaces/helper.interface";
+import {
+  getPaymentStatsService,
+  getPaymentsService,
+} from "../services/payment.service";
 
 export const initializePayment = async (
   req: Request,
@@ -23,6 +28,49 @@ export const initializePayment = async (
   }
 };
 
+export const getPayments: ExpresFunction = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { page, limit, status, channel, search, startDate, endDate } =
+      req.query;
+
+    const { userId } = req.params;
+
+    const data = await getPaymentsService({
+      userId,
+      page: Number(page),
+      limit: Number(limit),
+      channel: channel as string,
+      status: status as "paid" | "pending" | "refunded" | "failed" | undefined,
+      search: search as string,
+      startDate: startDate as string,
+      endDate: endDate as string,
+    });
+
+    res.status(200).json(data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPaymentStatsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await getPaymentStatsService(userId);
+
+    res.status(result.statusCode).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 // paystackWebhook
 export async function paystackWebhook(req: Request, res: Response) {
   const hash = crypto
