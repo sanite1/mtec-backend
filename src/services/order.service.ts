@@ -15,6 +15,7 @@ import {
   createOrderShippingTodo,
 } from "./todo.service";
 import { Todo } from "../models/todo";
+import { Payment, Wallet } from "../models/payment";
 
 export const createOrderService = async (data: CreateOrderRequest) => {
   const session = await mongoose.startSession();
@@ -216,6 +217,29 @@ export const createOrderService = async (data: CreateOrderRequest) => {
       }
     }
 
+    const reference = crypto.randomUUID();
+    if (order.channel === "physical") {
+      const payment = await Payment.create({
+        orderId: order._id,
+        userId: order.userId,
+        reference,
+        method: order.paymentMethod,
+        channel: order.channel,
+        status: order.paymentStatus === "paid" ? "paid" : "pending",
+        orderNumber: order.orderNumber,
+        amount: order.total,
+        customerEmail: order?.shippingAddress?.email,
+      });
+
+      if (payment.status === "paid") {
+        const wallet = await Wallet.findOne({ userId: order.userId });
+        if (wallet) {
+          wallet.pendingBalance += order.total;
+          await wallet.save();
+        }
+      }
+    }
+
     if (order.paymentStatus === "paid") {
       await createOrderShippingTodo({
         userId: data.userId,
@@ -401,8 +425,19 @@ export const cancelOrderService = async (id: string) => {
       throw new ApiError(400, "Order is already cancelled");
     }
 
+    if (
+      order.paymentStatus === "paid" &&
+      order.shippingStatus === "delivered"
+    ) {
+      throw new ApiError(400, "Order delivered can't be cancelled");
+    }
+
     // 2️⃣ If order was paid or completed, revert stock and create reverse ProductHistory
-    if (order.paymentStatus === "paid" || order.status === "completed") {
+    if (
+      order.paymentStatus === "paid" &&
+      (order.shippingStatus === "pending" ||
+        order.shippingStatus === "processing")
+    ) {
       for (const item of order.items) {
         const product = await Product.findById(item.productId).session(session);
         if (!product)
@@ -475,6 +510,40 @@ export const cancelOrderService = async (id: string) => {
       }
     }
 
+    const payment = await Payment.findOne({ orderId: order._id }).session(
+      session
+    );
+    if (payment?.status === "refunded") {
+      throw new ApiError(400, "Payment already refunded");
+    }
+
+    if (payment && order.channel === "physical") {
+      payment.status = "failed";
+      await payment.save();
+    }
+    if (
+      order.paymentStatus === "paid" &&
+      order.shippingStatus !== "delivered"
+    ) {
+      // Need to do paystack refund call here before updating db
+      if (payment) {
+        payment.status = "refunded";
+        await payment.save();
+      }
+      await Wallet.updateOne(
+        { userId: order.userId },
+        {
+          $inc: {
+            pendingBalance: -order.total,
+            refund: order.total, // optional but recommended
+          },
+        },
+        { session }
+      );
+    }
+    if (order.channel === "website") {
+    }
+
     // 3️⃣ Update order status
     order.status = "cancelled";
     order.shippingStatus = "cancelled";
@@ -491,16 +560,6 @@ export const cancelOrderService = async (id: string) => {
         "metadata.orderId": String(savedOrder._id),
         type: "order_needs_shipping",
       });
-      // await createOrderShippingTodo({
-      //   userId: String(savedOrder.userId),
-      //   orderId: String(savedOrder._id),
-      //   orderName: savedOrder.orderNumber,
-      // });
-      // if (
-      //   savedOrder.paymentStatus === "paid" ||
-      //   savedOrder.paymentStatus === "refunded"
-      // ) {
-      // }
     });
 
     // 4️⃣ Commit transaction
@@ -930,6 +989,22 @@ export const updateOrderPaymentService = async (
           orderId: String(savedOrder._id),
           orderName: savedOrder.orderNumber,
         });
+        const payment = await Payment.findOne({ orderId: order._id }).session(
+          session
+        );
+        if (payment?.status === "refunded") {
+          throw new ApiError(400, "Payment already refunded");
+        }
+
+        const wallet = await Wallet.findOne({ userId: order.userId });
+        if (payment && payment.status !== "paid") {
+          payment.status = "paid";
+          await payment.save();
+          if (wallet) {
+            wallet.pendingBalance += order.total;
+            await wallet.save();
+          }
+        }
       }
     });
     await session.commitTransaction();
@@ -983,12 +1058,24 @@ export const updateOrderShippingService = async (
     await order.save({ session }).then(async (savedOrder) => {
       // Clean up any past shipping todos for this order
 
-      if (shippingStatus === "shipped" || shippingStatus === "delivered") {
+      if (shippingStatus === "delivered") {
         await Todo.deleteMany({
           userId: String(savedOrder.userId),
           "metadata.orderId": String(savedOrder._id),
           type: "order_needs_shipping",
         });
+        const wallet = await Wallet.findOne({ userId: order.userId });
+        if (wallet) {
+          if (savedOrder.channel === "physical") {
+            wallet.pendingBalance -= order.total;
+            wallet.offlineTransaction += order.total;
+            await wallet.save();
+          } else {
+            wallet.pendingBalance -= order.total;
+            wallet.availableBalance += order.total;
+            await wallet.save();
+          }
+        }
       }
     });
 

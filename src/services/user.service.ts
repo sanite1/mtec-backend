@@ -34,6 +34,7 @@ import Tax from "../models/taxes";
 import Storefront from "../models/storefront";
 import Shipping from "../models/shipping";
 import Location from "../models/location";
+import { Wallet } from "../models/payment";
 
 const saltRounds = 13;
 
@@ -50,11 +51,12 @@ export const createUserService = async (data: CreateUserRequest) => {
   const newUser = await User.create(userInfo);
   await sendVerificationMail(newUser);
 
-  // Initialize onboarding for the new user
+  // Initialize onboarding and wallet for the new user
   try {
     await initOnboardingService({ userId: newUser._id.toString() });
+    await Wallet.create({ userId: newUser._id });
   } catch (err) {
-    console.error("Failed to initialize onboarding:", err);
+    console.error("Request failed:", err);
     // Optional: don’t throw here so user creation still succeeds
   }
 

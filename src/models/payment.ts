@@ -1,6 +1,6 @@
 // models/Payment.ts
 import mongoose, { model } from "mongoose";
-import { IPayment } from "../interfaces/payment.interface";
+import { IPayment, IWallet } from "../interfaces/payment.interface";
 
 const paymentSchema = new mongoose.Schema(
   {
@@ -22,7 +22,7 @@ const paymentSchema = new mongoose.Schema(
     currency: { type: String, default: "NGN" },
     status: {
       type: String,
-      enum: ["pending", "paid", "failed", "unprocessed"],
+      enum: ["pending", "paid", "failed", "refunded"],
       default: "pending",
     },
     channel: { type: String, default: "website" },
@@ -31,7 +31,22 @@ const paymentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const walletSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    availableBalance: { type: Number, default: 0 },
+    pendingBalance: { type: Number, default: 0 },
+    offlineTransaction: { type: Number, default: 0 },
+    refund: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
 // export default mongoose.model<IPayment>("Payment", paymentSchema);
 
-const Payment = model<IPayment>("Payment", paymentSchema);
-export default Payment;
+export const Payment = model<IPayment>("Payment", paymentSchema);
+export const Wallet = model<IWallet>("Wallet", walletSchema);

@@ -2,8 +2,8 @@
 import axios from "axios";
 import Order from "../models/order";
 import ApiError from "../errors/apiError";
-import Payment from "../models/payment";
 import ApiResponse from "../errors/apiResponse";
+import { Payment } from "../models/payment";
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!;
 

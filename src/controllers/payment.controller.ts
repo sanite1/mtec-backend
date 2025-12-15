@@ -3,10 +3,10 @@ import { NextFunction, Request, Response } from "express";
 import crypto from "crypto";
 import { initializePaystackPayment } from "../services/paystack.service";
 import Order from "../models/order";
-import Payment from "../models/payment";
 import { Todo } from "../models/todo";
 import { createOrderShippingTodo } from "../services/todo.service";
 import { updateOrderPaymentService } from "../services/order.service";
+import { Payment, Wallet } from "../models/payment";
 
 export const initializePayment = async (
   req: Request,
@@ -39,13 +39,32 @@ export async function paystackWebhook(req: Request, res: Response) {
   if (event.event === "charge.success") {
     const reference = event.data.reference;
 
-    const payment = await Payment.findOne({ reference });
-    if (!payment) return res.sendStatus(200);
+    // 🔐 ATOMIC CLAIM
+    const payment = await Payment.findOneAndUpdate(
+      { reference, status: { $ne: "paid" } },
+      {
+        $set: {
+          status: "paid",
+          method: event.data.channel,
+          paidAt: new Date(),
+        },
+      },
+      { new: true }
+    );
 
-    payment.status = "pending";
-    payment.method = event.data.channel;
-    payment.paidAt = new Date();
-    await payment.save();
+    // ❌ Already processed
+    if (!payment) {
+      return res.sendStatus(200);
+    }
+
+    // 💰 CREDIT ONCE
+    await Wallet.updateOne(
+      { userId: payment.userId },
+      { $inc: { pendingBalance: payment.amount } },
+      { upsert: true }
+    );
+
+    // 📦 Update order
     await updateOrderPaymentService(payment.orderId.toString(), "paid");
   }
 
