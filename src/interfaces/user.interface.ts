@@ -45,6 +45,8 @@ export interface IUser extends Document {
   middlename: string;
   email: string;
   phone: string;
+  kycStatus: string;
+  kycType: string;
   phoneNumber: string;
   profilePicture?: string;
   password: string; // Hashed password

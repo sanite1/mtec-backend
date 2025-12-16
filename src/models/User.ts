@@ -28,6 +28,17 @@ const userSchema = new Schema<IUser>(
     resetToken: { type: String },
     resetTokenExpires: { type: Date },
     dob: { type: Date },
+    kycStatus: {
+      type: String,
+      enum: ["unverified", "pending", "verified", "rejected"],
+      default: "unverified",
+    },
+
+    kycType: {
+      type: String,
+      enum: ["individual", "business"],
+      default: null,
+    },
   },
   {
     timestamps: true,
