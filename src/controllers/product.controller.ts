@@ -170,10 +170,11 @@ export const getProductHistory = async (
 ) => {
   try {
     const { productId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 10, activity } = req.query;
 
     const result = await getProductHistoryService(
       productId,
+      activity as string,
       Number(page),
       Number(limit)
     );

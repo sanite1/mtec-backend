@@ -94,6 +94,7 @@ export const getCustomersService = async ({
 
   // ✅ Newsletter filter
   if (subscribed === "true") filters.newsletterSubscribed = true;
+  if (subscribed === "false") filters.newsletterSubscribed = false;
 
   // ✅ Date range
   if (startDate && endDate) {

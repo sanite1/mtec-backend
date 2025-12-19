@@ -621,9 +621,13 @@ export const updateProductVariationService = async (
 
 export const getProductHistoryService = async (
   productId: string,
+  activity: string,
   page: number,
   limit: number
 ) => {
+  const filters: any = { productId };
+
+  if (activity) filters.activity = activity.trim();
   // 1️⃣ Ensure product exists
   const product = await Product.findById(productId);
   if (!product) throw new ApiError(404, "Product not found");
@@ -631,11 +635,11 @@ export const getProductHistoryService = async (
   // 2️⃣ Fetch history with pagination
   const skip = (page - 1) * limit;
   const [entries, total] = await Promise.all([
-    ProductHistory.find({ productId })
+    ProductHistory.find(filters)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit),
-    ProductHistory.countDocuments({ productId }),
+    ProductHistory.countDocuments(filters),
   ]);
 
   // 3️⃣ Return response
