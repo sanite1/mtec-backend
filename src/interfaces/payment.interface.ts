@@ -19,5 +19,7 @@ export interface IWallet extends mongoose.Document {
   availableBalance: number;
   pendingBalance: number;
   offlineTransaction: number;
+  withdrawnBalance: number;
+  pendingWithdrawalBalance: number;
   refund: number;
 }

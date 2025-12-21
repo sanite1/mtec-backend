@@ -5,6 +5,7 @@ import {
   createPayoutDetails,
   deletePayoutDetails,
   getPayoutDetails,
+  getPaystackBanks,
   updatePayoutDetails,
 } from "../controllers/payoutDetails.comtroller";
 
@@ -16,6 +17,7 @@ import {
 } from "../validations/payoutDetails.validation";
 
 const router = Router();
+router.route("/paystack/bank").get(isAuthenticated, getPaystackBanks);
 
 // GET /api/payout-details/:userId
 router

@@ -118,3 +118,52 @@ export async function paystackWebhook(req: Request, res: Response) {
 
   res.sendStatus(200);
 }
+
+export async function paystackTransferWebhook(req: Request, res: Response) {
+  const hash = crypto
+    .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY!)
+    .update(JSON.stringify(req.body))
+    .digest("hex");
+
+  if (hash !== req.headers["x-paystack-signature"]) {
+    return res.status(401).send("Invalid signature");
+  }
+
+  const event = req.body;
+  const data = event.data;
+
+  /**
+   * IMPORTANT:
+   * You should store `transfer_code` or `reference`
+   * when creating a withdrawal to prevent double-processing.
+   */
+
+  if (event.event === "transfer.success") {
+    await Wallet.updateOne(
+      { userId: data.metadata?.userId },
+      {
+        $inc: {
+          withdrawnBalance: data.amount / 100,
+          pendingWithdrawalBalance: -(data.amount / 100),
+        },
+      }
+    );
+  }
+
+  if (
+    event.event === "transfer.failed" ||
+    event.event === "transfer.reversed"
+  ) {
+    await Wallet.updateOne(
+      { userId: data.metadata?.userId },
+      {
+        $inc: {
+          availableBalance: data.amount / 100,
+          pendingWithdrawalBalance: -(data.amount / 100),
+        },
+      }
+    );
+  }
+
+  return res.sendStatus(200);
+}

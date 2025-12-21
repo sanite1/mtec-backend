@@ -7,6 +7,8 @@ const shippingSchema = new Schema<IPayoutDetails>(
     accountName: { type: String, required: true, trim: true },
     accountNumber: { type: String, trim: true },
     bankName: { type: String, required: true, min: 0 },
+    bankCode: { type: String, required: true },
+    recipientCode: { type: String },
     acceptTerms: { type: Boolean, trim: true },
     allowCustomerCharges: { type: Boolean, default: true },
   },

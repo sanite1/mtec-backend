@@ -7,6 +7,7 @@ import {
 } from "../services/payoutDetails.service";
 import { ExpresFunction } from "../interfaces/helper.interface";
 import { UpdatePayoutDetailsRequest } from "../interfaces/payoutDetails.interface";
+import axios from "axios";
 
 /**
  * @desc Get payout details for a user
@@ -80,3 +81,29 @@ export const deletePayoutDetails = async (
     next(error);
   }
 };
+
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY!;
+
+export async function getPaystackBanks(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const response = await axios.get(
+      "https://api.paystack.co/bank?currency=NGN",
+      {
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+
+    res.status(200).json({
+      status: true,
+      data: response.data.data,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

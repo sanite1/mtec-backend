@@ -41,6 +41,8 @@ const walletSchema = new mongoose.Schema(
     availableBalance: { type: Number, default: 0 },
     pendingBalance: { type: Number, default: 0 },
     offlineTransaction: { type: Number, default: 0 },
+    withdrawnBalance: { type: Number, default: 0 },
+    pendingWithdrawalBalance: { type: Number, default: 0 },
     refund: { type: Number, default: 0 },
   },
   { timestamps: true }

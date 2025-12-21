@@ -5,6 +5,8 @@ export interface IPayoutDetails {
   accountName: string;
   accountNumber: string;
   bankName: string;
+  bankCode: string;
+  recipientCode: string;
   allowCustomerCharges: boolean;
   acceptTerms: boolean;
 }
@@ -13,6 +15,8 @@ export interface UpdatePayoutDetailsRequest {
   accountName: string;
   accountNumber: string;
   bankName: string;
+  bankCode: string;
+  recipientCode: string;
   allowCustomerCharges: boolean;
   acceptTerms: boolean;
 }

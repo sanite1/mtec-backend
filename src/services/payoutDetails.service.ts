@@ -3,6 +3,7 @@ import ApiResponse from "../errors/apiResponse";
 import User from "../models/User";
 import PayoutDetails from "../models/payoutDetails";
 import { IPayoutDetails } from "../interfaces/payoutDetails.interface";
+import { createPaystackRecipient } from "./paystack.service";
 
 // ✅ Get payout details by userId
 export const getPayoutDetailsService = async (userId: string) => {
@@ -32,7 +33,7 @@ export const createPayoutDetailsService = async (data: IPayoutDetails) => {
     if (existing) {
       throw new ApiError(400, "Payout details already exist for this user.");
     }
-
+    data.recipientCode = await createPaystackRecipient(data);
     const payout = await PayoutDetails.create(data);
 
     return new ApiResponse(201, "Payout details created successfully", payout);
@@ -65,11 +66,17 @@ export const updatePayoutDetailsService = async (
         "You cannot modify the userId for payout details."
       );
     }
+    console.log(data);
 
-    const updated = await PayoutDetails.findByIdAndUpdate(id, data, {
-      new: true,
-      runValidators: true,
-    });
+    const recipientCode = await createPaystackRecipient(data as IPayoutDetails);
+    const updated = await PayoutDetails.findByIdAndUpdate(
+      id,
+      { ...data, recipientCode },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     return new ApiResponse(200, "Payout details updated successfully", updated);
   } catch (error: any) {
