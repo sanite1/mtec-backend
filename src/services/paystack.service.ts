@@ -107,8 +107,23 @@ export async function createWithdrawal(userId: string) {
 
     return response.data;
   } catch (error) {
+    // console.log(error);
+
     await session.abortTransaction();
     session.endSession();
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message;
+      const code = error.response?.data?.code;
+
+      if (code === "transfer_unavailable") {
+        throw new ApiError(
+          403,
+          "Payouts are not enabled on this Paystack account yet."
+        );
+      }
+
+      throw new ApiError(400, message || "Paystack error");
+    }
     throw error;
   }
 }

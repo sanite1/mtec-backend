@@ -31,3 +31,10 @@ export const getPaymentStatsValidation = () =>
       userId: Joi.string().required(),
     }),
   });
+
+export const withdrawValidation = () =>
+  validate({
+    params: Joi.object({
+      userId: Joi.string().required(),
+    }),
+  });

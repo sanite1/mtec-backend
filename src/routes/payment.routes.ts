@@ -5,11 +5,13 @@ import {
   getPayments,
   initializePayment,
   paystackWebhook,
+  withdrawBalance,
 } from "../controllers/payment.controller";
 import {
   getPaymentStatsValidation,
   getPaymentValidation,
   initializePaymentValidation,
+  withdrawValidation,
 } from "../validations/payment.validation";
 import { isAuthenticated } from "../middlewares/authenticatedMiddleWare";
 
@@ -20,6 +22,10 @@ router.route("/initialize/:orderId").post(
   initializePaymentValidation(),
   initializePayment
 );
+
+router
+  .route("/withdraw/:userId")
+  .post(isAuthenticated, withdrawValidation(), withdrawBalance);
 
 router
   .route("/:userId")

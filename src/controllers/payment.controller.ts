@@ -1,7 +1,10 @@
 // controllers/payment.controller.ts
 import { NextFunction, Request, Response } from "express";
 import crypto from "crypto";
-import { initializePaystackPayment } from "../services/paystack.service";
+import {
+  createWithdrawal,
+  initializePaystackPayment,
+} from "../services/paystack.service";
 import Order from "../models/order";
 import { Todo } from "../models/todo";
 import { createOrderShippingTodo } from "../services/todo.service";
@@ -21,6 +24,21 @@ export const initializePayment = async (
   try {
     const { orderId } = req.params;
     const result = await initializePaystackPayment(orderId);
+
+    return res.status(result.statusCode).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const withdrawBalance = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+    const result = await createWithdrawal(userId);
 
     return res.status(result.statusCode).json(result);
   } catch (error) {
@@ -71,6 +89,7 @@ export const getPaymentStatsController = async (
     next(error);
   }
 };
+
 // paystackWebhook
 export async function paystackWebhook(req: Request, res: Response) {
   const hash = crypto
