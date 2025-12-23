@@ -71,3 +71,39 @@ export interface GetOrdersParams {
   startDate?: string;
   endDate?: string;
 }
+export type ShippingStatus =
+  | "pending"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
+
+export interface IOrder extends Document {
+  _id: Types.ObjectId;
+  orderNumber: string;
+
+  userId: Types.ObjectId;
+  customerId?: Types.ObjectId;
+
+  status: OrderStatus;
+  shippingStatus: ShippingStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+
+  items: OrderItem[];
+
+  subtotal: number;
+  discount?: number;
+  tax?: number;
+  shippingFee?: number;
+  total: number;
+
+  channel: string;
+
+  shippingAddress: ShippingAddress;
+
+  note?: string;
+
+  createdAt: Date;
+  updatedAt: Date;
+}

@@ -2,7 +2,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MTEC Password Reset Request</title>
+    <title>MTEC Low Stock Alert</title>
     <style>
       body {
         font-family: "Inter", Arial, sans-serif;
@@ -16,7 +16,7 @@
         max-width: 600px;
         margin: 0 auto 10px;
         background: #ffffff;
-        padding: 1px 30px 30px;
+        padding: 1px 14px 30px;
         border-radius: 12px;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
       }
@@ -25,10 +25,6 @@
         text-align: center;
         border-bottom: 2px solid #eaeaea;
         padding-bottom: 5px;
-      }
-
-      .header img {
-        max-width: 160px;
       }
 
       .header p {
@@ -50,6 +46,21 @@
         line-height: 1.6;
       }
 
+      .alert-box {
+        background-color: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        padding: 14px;
+        border-radius: 8px;
+        margin: 20px 0;
+        font-size: 15px;
+      }
+
+      .product {
+        font-weight: 600;
+        color: #111827;
+      }
+
       .button {
         display: inline-block;
         background: linear-gradient(90deg, #7c3aed, #7c3aed);
@@ -59,16 +70,8 @@
         border-radius: 8px;
         font-weight: 600;
         letter-spacing: 0.3px;
-        margin-top: 5px;
+        margin-top: 10px;
         text-align: center;
-      }
-
-      .button:hover {
-        opacity: 0.9;
-      }
-
-      .content {
-        padding: 20px 0;
       }
 
       .footer {
@@ -84,10 +87,6 @@
       .footer a {
         color: #7c3aed;
         text-decoration: none;
-      }
-
-      .footer a:hover {
-        text-decoration: underline;
       }
 
       @media (max-width: 600px) {
@@ -106,32 +105,37 @@
     <div class="container">
       <!-- Header -->
       <div class="header">
-        {{! <img
-          src="https://res.cloudinary.com/dv4uk8qqc/image/upload/v1742470541/MTEC_Users/i66ramiru2d9doyfo7hx.png"
-          alt="MTEC Logo"
-        /> }}
-
-        <p>
-          MTEC
-        </p>
+        <p>MTEC</p>
       </div>
 
       <!-- Content -->
       <div class="content">
-        <h2>Password Reset Request</h2>
-        <p>Hi {{name}},</p>
-        <p>
-          We received a request to reset your MTEC password. Click the button
-          below to securely reset it:
-        </p>
+        <h2>Low Stock Alert</h2>
 
-        <div style="text-align: center;">
-          <a href="{{url}}" class="button">Reset Password</a>
+        <p>Hi {{name}},</p>
+
+        <div class="alert-box">
+          ⚠️ The following product is running low on stock:
         </div>
 
         <p>
-          If you didn’t request this, you can safely ignore this email. Your
-          password will remain unchanged.
+          <span class="product">{{productName}}</span><br />
+          Remaining Quantity:
+          <b>{{quantity}}</b>
+        </p>
+
+        <p>
+          To avoid running out of stock and missing sales, we recommend
+          restocking this product as soon as possible.
+        </p>
+
+        <div style="text-align: center;">
+          <a href="{{url}}" class="button">Manage Product</a>
+        </div>
+
+        <p>
+          If you have already restocked this item, you can safely ignore this
+          message.
         </p>
       </div>
 
@@ -140,7 +144,7 @@
         <p>
           &copy; 2025 MTEC. All rights reserved.<br />
           Need help? Contact us at
-          <a href="mailto:support@bitec.store">support@mtec.com</a>
+          <a href="mailto:support@mtec.com">support@mtec.com</a>
         </p>
       </div>
     </div>

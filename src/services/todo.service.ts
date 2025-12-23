@@ -4,6 +4,13 @@ import { Todo } from "../models/todo";
 import { CreateTodoArgs, ITodo, TodoType } from "../interfaces/todo.interface";
 import ApiResponse from "../errors/apiResponse";
 import User from "../models/User";
+import {
+  sendLowStockMail,
+  sendOrderPendingPaymentBuyerMail,
+  sendOrderPendingPaymentMerchantMail,
+} from "./nodemailer/mail.service";
+import Order from "../models/order";
+import { IOrder } from "../interfaces/order.interface";
 
 // BASE GENERIC CREATE TODO SERVICE
 export const createTodoService = async (args: CreateTodoArgs) => {
@@ -54,6 +61,26 @@ export const createLowStockTodo = async ({
   productName: string;
   currentStock: number;
 }) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(400, `User not found`);
+    }
+    await sendLowStockMail({
+      email: user.email,
+      name: user.firstname,
+      productName: productName,
+      quantity: currentStock,
+      productId: productId,
+    });
+  } catch (error: any) {
+    if (error instanceof ApiError) throw error;
+    console.error(" Error:", error);
+    throw new ApiError(
+      500,
+      error.message || "Something went wrong while sending mail"
+    );
+  }
   return createTodoService({
     userId,
     type: "low_stock",
@@ -66,6 +93,25 @@ export const createLowStockTodo = async ({
 };
 
 // 2. ORDER PENDING CONFIRMATION
+// export const createOrderPendingPaymentTodo = async ({
+//   userId,
+//   orderId,
+//   orderName,
+// }: {
+//   userId: string;
+//   orderId: string;
+//   orderName: string;
+// }) => {
+//   return createTodoService({
+//     userId,
+//     type: "order_pending_payment",
+//     title: `${orderName} - Pending Payment`,
+//     description: `${orderName} is yet to be confirmed.`,
+//     metadata: { orderId },
+//     actionUrl: `/orders/${orderId}`,
+//     priority: "medium",
+//   });
+// };
 export const createOrderPendingPaymentTodo = async ({
   userId,
   orderId,
@@ -75,11 +121,30 @@ export const createOrderPendingPaymentTodo = async ({
   orderId: string;
   orderName: string;
 }) => {
+  const merchant = await User.findById(userId);
+  if (!merchant) throw new ApiError(400, "Merchant not found");
+  console.log(orderId);
+
+  const order = await Order.findById(orderId);
+  if (!order) throw new ApiError(400, "Order not found");
+
+  // Buyer email
+  await sendOrderPendingPaymentBuyerMail({
+    email: order?.shippingAddress?.email || "",
+    data: mapOrderToEmailPayload(order, "buyer"),
+  });
+
+  // Merchant email
+  await sendOrderPendingPaymentMerchantMail({
+    email: merchant.email,
+    data: mapOrderToEmailPayload(order, "merchant"),
+  });
+
   return createTodoService({
     userId,
     type: "order_pending_payment",
     title: `${orderName} - Pending Payment`,
-    description: `${orderName} is yet to be confirmed.`,
+    description: `Order is awaiting payment confirmation.`,
     metadata: { orderId },
     actionUrl: `/orders/${orderId}`,
     priority: "medium",
@@ -269,3 +334,41 @@ export async function deleteTodo({
     );
   }
 }
+
+export const mapOrderToEmailPayload = (
+  order: IOrder,
+  role: "buyer" | "merchant"
+) => ({
+  buyerName: order.shippingAddress.fullName,
+  // merchantName: order.storeName,
+  orderNumber: order.orderNumber,
+  orderDate: new Date(order.createdAt).toLocaleString(),
+  orderStatus: order.status,
+  paymentStatus: order.paymentStatus,
+  paymentMethod: order.paymentMethod.replace("_", " "),
+  shipping: {
+    fullName: order.shippingAddress.fullName,
+    phone: order.shippingAddress.phone,
+    email: order.shippingAddress.email,
+    address1: order.shippingAddress.addressLine1,
+    address2: order.shippingAddress.addressLine2,
+    city: order.shippingAddress.city,
+    state: order.shippingAddress.state,
+    country: order.shippingAddress.country,
+  },
+  items: order.items.map((item: any) => ({
+    name: item.name,
+    sku: item.sku,
+    quantity: item.quantity,
+    price: `₦${item.price?.toLocaleString()}`,
+    subtotal: `₦${item.subtotal?.toLocaleString()}`,
+  })),
+  totals: {
+    subtotal: `₦${order.subtotal?.toLocaleString()}`,
+    shipping: `₦${order.shippingFee?.toLocaleString()}`,
+    tax: `₦${order.tax?.toLocaleString()}`,
+    discount: `₦${order.discount?.toLocaleString()}`,
+    total: `₦${order.total?.toLocaleString()}`,
+  },
+  orderUrl: `${process.env.DOMAIN_NAME}/orders/${order._id}`,
+});

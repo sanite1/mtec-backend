@@ -40,6 +40,7 @@ export interface IPasswordReset {
 
 export interface IUser extends Document {
   _id: Types.ObjectId;
+  storeId: Types.ObjectId;
   firstname: string;
   lastname: string;
   middlename: string;

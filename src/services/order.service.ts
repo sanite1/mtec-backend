@@ -4,6 +4,9 @@ import ApiResponse from "../errors/apiResponse";
 import {
   CreateOrderRequest,
   GetOrdersParams,
+  OrderStatus,
+  PaymentStatus,
+  ShippingStatus,
   shippingStatus,
 } from "../interfaces/order.interface";
 import { Product, ProductHistory, ProductVariation } from "../models/product";
@@ -241,6 +244,10 @@ export const createOrderService = async (data: CreateOrderRequest) => {
       }
     }
 
+    // 6️⃣ Commit & return
+    await session.commitTransaction();
+    session.endSession();
+
     if (order.paymentStatus === "paid") {
       await createOrderShippingTodo({
         userId: data.userId,
@@ -254,10 +261,6 @@ export const createOrderService = async (data: CreateOrderRequest) => {
         orderName: order.orderNumber,
       });
     }
-
-    // 6️⃣ Commit & return
-    await session.commitTransaction();
-    session.endSession();
 
     return new ApiResponse(201, "Order created successfully", order);
   } catch (error) {
@@ -763,7 +766,7 @@ export const updateOrderStatusService = async (id: string, status: string) => {
     }
 
     // 3️⃣ Save order with new status
-    order.status = status;
+    order.status = status as OrderStatus;
     await order.save({ session }).then(async (savedOrder) => {
       if (
         savedOrder.paymentStatus === "paid" ||
@@ -974,7 +977,7 @@ export const updateOrderPaymentService = async (
     }
 
     // 3️⃣ Save updates
-    order.paymentStatus = paymentStatus;
+    order.paymentStatus = paymentStatus as PaymentStatus;
     await order.save({ session }).then(async (savedOrder) => {
       if (
         savedOrder.paymentStatus === "paid" ||
@@ -1055,7 +1058,7 @@ export const updateOrderShippingService = async (
     }
 
     // 3️⃣ Update
-    order.shippingStatus = shippingStatus;
+    order.shippingStatus = shippingStatus as ShippingStatus;
 
     await order.save({ session }).then(async (savedOrder) => {
       // Clean up any past shipping todos for this order

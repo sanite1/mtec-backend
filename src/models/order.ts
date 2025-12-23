@@ -6,6 +6,7 @@ import {
   PaymentStatus,
   PaymentMethod,
   shippingStatus,
+  IOrder,
 } from "../interfaces/order.interface";
 
 const orderItemSchema = new Schema<OrderItem>(
@@ -53,22 +54,22 @@ const orderSchema = new Schema(
       type: String,
       enum: ["pending", "completed", "cancelled", "refunded"],
       default: "pending",
-    } as unknown as OrderStatus,
+    },
     shippingStatus: {
       type: String,
       enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
       default: "pending",
-    } as unknown as shippingStatus,
+    },
     paymentStatus: {
       type: String,
       enum: ["unpaid", "paid", "refunded"],
       default: "unpaid",
-    } as unknown as PaymentStatus,
+    },
     paymentMethod: {
       type: String,
       enum: ["card", "bank_transfer", "cash", "other"],
       default: "other",
-    } as unknown as PaymentMethod,
+    },
     items: [orderItemSchema],
     subtotal: { type: Number, required: true, default: 0 },
     channel: { type: String, required: true, default: 0 },
@@ -82,5 +83,5 @@ const orderSchema = new Schema(
   { timestamps: true }
 );
 
-const Order = model("Order", orderSchema);
+export const Order = model<IOrder>("Order", orderSchema);
 export default Order;

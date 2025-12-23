@@ -35,6 +35,8 @@ export const createStoreService = async (data: IStoreCreate) => {
 
     // 4) Create new store
     const newStore = await Store.create(data);
+    user.storeId = newStore._id;
+    user.save();
 
     // 5) Automatically create TODO if incomplete
     if (isIncomplete) {

@@ -14,6 +14,11 @@ const userSchema = new Schema<IUser>(
       lowercase: true,
       trim: true,
     },
+    storeId: {
+      type: Schema.Types.ObjectId,
+      ref: "StoreDetails",
+      required: true,
+    },
     phoneNumber: { type: String, trim: true },
     profilePicture: { type: String },
     password: { type: String, required: true },

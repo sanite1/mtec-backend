@@ -43,6 +43,89 @@ export const sendforgotPasswordMail = async (userInfo: IUser) => {
   }
 };
 
+export const sendLowStockMail = async ({
+  email,
+  name,
+  productName,
+  quantity,
+  productId,
+}: {
+  email: string;
+  name: string;
+  productName: string;
+  quantity: number;
+  productId: string;
+}) => {
+  const mailOptions = {
+    from: `"MTEC" <${process.env.AUTH_EMAIL}>`,
+    to: email,
+    subject: `Low Stock Alert: ${productName}`,
+    template: "./lowstock",
+    context: {
+      name,
+      productName,
+      quantity,
+      url: `${DOMAIN_NAME}/products/${productId}`,
+    },
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new ApiError(500, `Error sending low stock email: ${error}`);
+  }
+};
+
+export const sendOrderPendingPaymentBuyerMail = async ({
+  email,
+  data,
+}: {
+  email: string;
+  data: any;
+}) => {
+  const mailOptions = {
+    from: `"MTEC" <${process.env.AUTH_EMAIL}>`,
+    to: email,
+    subject: "Order Pending Payment Confirmation",
+    template: "./order-pending-payment-buyer",
+    context: data,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new ApiError(
+      500,
+      `Error sending order pending payment email: ${error}`
+    );
+  }
+};
+
+export const sendOrderPendingPaymentMerchantMail = async ({
+  email,
+  data,
+}: {
+  email: string;
+  data: any;
+}) => {
+  const mailOptions = {
+    from: `"MTEC" <${process.env.AUTH_EMAIL}>`,
+    to: email,
+    subject: "New Order Awaiting Payment",
+    template: "./order-pending-payment-merchant",
+    context: data,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new ApiError(
+      500,
+      `Error sending order pending payment email: ${error}`
+    );
+  }
+};
+
 export const sendInvoiceMail = async (
   file: { path: string; filename: string },
   email: string,
