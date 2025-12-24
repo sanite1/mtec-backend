@@ -6,6 +6,7 @@ import ApiResponse from "../errors/apiResponse";
 import User from "../models/User";
 import {
   sendLowStockMail,
+  sendOrderNeedsShippingMail,
   sendOrderPendingPaymentBuyerMail,
   sendOrderPendingPaymentMerchantMail,
 } from "./nodemailer/mail.service";
@@ -94,26 +95,6 @@ export const createLowStockTodo = async ({
   });
 };
 
-// 2. ORDER PENDING CONFIRMATION
-// export const createOrderPendingPaymentTodo = async ({
-//   userId,
-//   orderId,
-//   orderName,
-// }: {
-//   userId: string;
-//   orderId: string;
-//   orderName: string;
-// }) => {
-//   return createTodoService({
-//     userId,
-//     type: "order_pending_payment",
-//     title: `${orderName} - Pending Payment`,
-//     description: `${orderName} is yet to be confirmed.`,
-//     metadata: { orderId },
-//     actionUrl: `/orders/${orderId}`,
-//     priority: "medium",
-//   });
-// };
 export const createOrderPendingPaymentTodo = async ({
   userId,
   orderId,
@@ -175,6 +156,30 @@ export const createOrderShippingTodo = async ({
   orderId: string;
   orderName: string;
 }) => {
+  try {
+    const merchant = await User.findById(userId);
+    if (!merchant) throw new ApiError(400, "Merchant not found");
+
+    const order = await Order.findById(orderId);
+    if (!order) throw new ApiError(400, "Order not found");
+
+    const store = await Store.findById(merchant.storeId);
+    if (!store) throw new ApiError(400, "Store not found");
+
+    // Merchant email
+    await sendOrderNeedsShippingMail({
+      email: merchant.email,
+      data: mapOrderToEmailPayload(order, store),
+    });
+  } catch (error: any) {
+    if (error instanceof ApiError) throw error;
+    console.log(" Error:", error);
+    throw new ApiError(
+      500,
+      error.message || "Something went wrong while sending mail"
+    );
+  }
+
   return createTodoService({
     userId,
     type: "order_needs_shipping",

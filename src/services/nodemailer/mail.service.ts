@@ -34,6 +34,7 @@ export const sendforgotPasswordMail = async (userInfo: IUser) => {
     context: {
       name: userInfo.lastname,
       url: `${DOMAIN_NAME}/reset-password/${userInfo._id}/${userInfo.resetToken}`,
+      currentYear: new Date().getFullYear(),
     },
   };
   try {
@@ -66,6 +67,7 @@ export const sendLowStockMail = async ({
       productName,
       quantity,
       url: `${DOMAIN_NAME}/products/${productId}`,
+      currentYear: new Date().getFullYear(),
     },
   };
 
@@ -88,7 +90,7 @@ export const sendOrderPendingPaymentBuyerMail = async ({
     to: email,
     subject: "Order Pending Payment Confirmation",
     template: "./order-pending-payment-buyer",
-    context: data,
+    context: { ...data, currentYear: new Date().getFullYear() },
   };
 
   try {
@@ -109,11 +111,11 @@ export const sendOrderPendingPaymentMerchantMail = async ({
   data: any;
 }) => {
   const mailOptions = {
-    from: `"${data.merchantName}" <${process.env.AUTH_EMAIL}>`,
+    from: `"MTEC" <${process.env.AUTH_EMAIL}>`,
     to: email,
     subject: "New Order Awaiting Payment",
     template: "./order-pending-payment-merchant",
-    context: data,
+    context: { ...data, currentYear: new Date().getFullYear() },
   };
 
   try {
@@ -138,7 +140,7 @@ export const sendPaymentConfirmedMail = async ({
     to: email,
     subject: `${data.orderNumber} - Payment Confirmed`,
     template: "./payment-confirmed",
-    context: data,
+    context: { ...data, currentYear: new Date().getFullYear() },
   };
 
   try {
@@ -156,11 +158,11 @@ export const sendPaymentConfirmedMerchantMail = async ({
   data: any;
 }) => {
   const mailOptions = {
-    from: `"${data.merchantName}" <${process.env.AUTH_EMAIL}>`,
+    from: `"MTEC" <${process.env.AUTH_EMAIL}>`,
     to: email,
     subject: `${data.orderNumber} - Payment Confirmed`,
     template: "./payment-confirmed-merchant",
-    context: data,
+    context: { ...data, currentYear: new Date().getFullYear() },
   };
 
   try {
@@ -169,6 +171,31 @@ export const sendPaymentConfirmedMerchantMail = async ({
     throw new ApiError(
       500,
       `Error sending payment confirmed email to merchant: ${error}`
+    );
+  }
+};
+
+export const sendOrderNeedsShippingMail = async ({
+  email,
+  data,
+}: {
+  email: string;
+  data: any;
+}) => {
+  const mailOptions = {
+    from: `"MTEC" <${process.env.AUTH_EMAIL}>`,
+    to: email,
+    subject: `${data.orderNumber} - Shipping Needed`,
+    template: "./order-needs-shipping",
+    context: { ...data, currentYear: new Date().getFullYear() },
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new ApiError(
+      500,
+      `Error sending order needs shipping to merchant: ${error}`
     );
   }
 };

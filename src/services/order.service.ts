@@ -1011,11 +1011,6 @@ export const updateOrderPaymentService = async (
           "metadata.orderId": String(savedOrder._id),
           type: "order_pending_payment",
         });
-        await createOrderShippingTodo({
-          userId: String(savedOrder.userId),
-          orderId: String(savedOrder._id),
-          orderName: savedOrder.orderNumber,
-        });
 
         await sendPaymentConfirmedMail({
           email: savedOrder.shippingAddress.email || "",
@@ -1024,6 +1019,11 @@ export const updateOrderPaymentService = async (
         await sendPaymentConfirmedMerchantMail({
           email: user.email || "",
           data: mapOrderToEmailPayload(savedOrder, store),
+        });
+        await createOrderShippingTodo({
+          userId: String(savedOrder.userId),
+          orderId: String(savedOrder._id),
+          orderName: savedOrder.orderNumber,
         });
         const payment = await Payment.findOne({ orderId: order._id }).session(
           session
