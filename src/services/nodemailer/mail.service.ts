@@ -200,6 +200,28 @@ export const sendOrderNeedsShippingMail = async ({
   }
 };
 
+export const sendOrderShippingStatusMail = async ({
+  email,
+  data,
+}: {
+  email: string;
+  data: any;
+}) => {
+  const mailOptions = {
+    from: `"${data.merchantName}" <${process.env.AUTH_EMAIL}>`,
+    to: email,
+    subject: `${data.orderNumber} - Shipping Status Updated`,
+    template: "./shipping-updated",
+    context: { ...data, currentYear: new Date().getFullYear() },
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new ApiError(500, `Error sending shipping status: ${error}`);
+  }
+};
+
 export const sendInvoiceMail = async (
   file: { path: string; filename: string },
   email: string,

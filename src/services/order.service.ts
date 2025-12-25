@@ -21,6 +21,7 @@ import {
 import { Todo } from "../models/todo";
 import { Payment, Wallet } from "../models/payment";
 import {
+  sendOrderShippingStatusMail,
   sendPaymentConfirmedMail,
   sendPaymentConfirmedMerchantMail,
 } from "./nodemailer/mail.service";
@@ -1067,6 +1068,12 @@ export const updateOrderShippingService = async (
     const order = await Order.findById(id).session(session);
     if (!order) throw new ApiError(404, "Order not found");
 
+    const user = await User.findById(order.userId).session(session);
+    if (!user) throw new ApiError(404, "User not found");
+
+    const store = await Store.findById(user.storeId).session(session);
+    if (!store) throw new ApiError(404, "Store not found");
+
     const oldShippingStatus: shippingStatus =
       order.shippingStatus as shippingStatus;
 
@@ -1114,6 +1121,11 @@ export const updateOrderShippingService = async (
           }
         }
       }
+    });
+
+    await sendOrderShippingStatusMail({
+      email: order.shippingAddress.email || "",
+      data: mapOrderToEmailPayload(order, store),
     });
 
     await session.commitTransaction();

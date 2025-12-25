@@ -369,6 +369,7 @@ export const mapOrderToEmailPayload = (
   paymentDate: new Date(order.createdAt).toLocaleString(),
   orderStatus: order.status,
   paymentStatus: order.paymentStatus,
+  shippingStatus: order.shippingStatus,
   paymentMethod: order.paymentMethod.replace("_", " "),
   shipping: {
     fullName: order.shippingAddress.fullName,
