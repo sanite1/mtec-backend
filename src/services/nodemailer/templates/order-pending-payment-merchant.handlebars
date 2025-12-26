@@ -100,6 +100,7 @@
 
   <body>
     <div class="container">
+
       <div class="header">
         {{#if storeLogo}}
           <img
@@ -113,11 +114,11 @@
         {{/if}}
       </div>
 
-      <h2>Order Pending Payment</h2>
-
-      <p>Hello {{buyerName}},</p>
-      <p>Your order has been created successfully but is still awaiting payment
-        confirmation.</p>
+      <h2>New Order Awaiting Payment</h2>
+      <p>Hello {{merchantName}},</p>
+      <p>A new order has been placed in your store but payment is yet to be
+        confirmed.
+      </p>
 
       <!-- Order Summary -->
       <div class="box">
@@ -237,10 +238,7 @@
       >Complete Payment</a>
 
       <div class="footer">
-        © 2025
-        {{merchantName}}
-        ·
-        {{storeEmail}}
+        © 2025 MTEC · support@mtec.com
       </div>
     </div>
   </body>

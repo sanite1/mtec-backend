@@ -84,7 +84,7 @@ export const sendOrderPendingPaymentBuyerMail = async ({
   data: any;
 }) => {
   const mailOptions = {
-    from: `"MTEC" <${process.env.AUTH_EMAIL}>`,
+    from: `"${data.merchantName}" <${process.env.AUTH_EMAIL}>`,
     to: email,
     subject: "Order Pending Payment Confirmation",
     template: "./order-pending-payment-buyer",
@@ -109,7 +109,7 @@ export const sendOrderPendingPaymentMerchantMail = async ({
   data: any;
 }) => {
   const mailOptions = {
-    from: `"MTEC" <${process.env.AUTH_EMAIL}>`,
+    from: `"${data.merchantName}" <${process.env.AUTH_EMAIL}>`,
     to: email,
     subject: "New Order Awaiting Payment",
     template: "./order-pending-payment-merchant",

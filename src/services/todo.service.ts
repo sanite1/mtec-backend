@@ -11,6 +11,8 @@ import {
 } from "./nodemailer/mail.service";
 import Order from "../models/order";
 import { IOrder } from "../interfaces/order.interface";
+import { Store } from "../models/store.model";
+import { IStoreDetails } from "../interfaces/store.interface";
 
 // BASE GENERIC CREATE TODO SERVICE
 export const createTodoService = async (args: CreateTodoArgs) => {
@@ -121,24 +123,36 @@ export const createOrderPendingPaymentTodo = async ({
   orderId: string;
   orderName: string;
 }) => {
-  const merchant = await User.findById(userId);
-  if (!merchant) throw new ApiError(400, "Merchant not found");
-  console.log(orderId);
+  try {
+    const merchant = await User.findById(userId);
+    if (!merchant) throw new ApiError(400, "Merchant not found");
 
-  const order = await Order.findById(orderId);
-  if (!order) throw new ApiError(400, "Order not found");
+    const order = await Order.findById(orderId);
+    if (!order) throw new ApiError(400, "Order not found");
 
-  // Buyer email
-  await sendOrderPendingPaymentBuyerMail({
-    email: order?.shippingAddress?.email || "",
-    data: mapOrderToEmailPayload(order, "buyer"),
-  });
+    const store = await Store.findById(merchant.storeId);
+    if (!store) throw new ApiError(400, "Store not found");
 
-  // Merchant email
-  await sendOrderPendingPaymentMerchantMail({
-    email: merchant.email,
-    data: mapOrderToEmailPayload(order, "merchant"),
-  });
+    // Buyer email
+    await sendOrderPendingPaymentBuyerMail({
+      email: order?.shippingAddress?.email || "",
+      data: mapOrderToEmailPayload(order, store),
+    });
+    console.log(merchant);
+
+    // Merchant email
+    await sendOrderPendingPaymentMerchantMail({
+      email: merchant.email,
+      data: mapOrderToEmailPayload(order, store),
+    });
+  } catch (error: any) {
+    if (error instanceof ApiError) throw error;
+    console.log(" Error:", error);
+    throw new ApiError(
+      500,
+      error.message || "Something went wrong while sending mail"
+    );
+  }
 
   return createTodoService({
     userId,
@@ -337,10 +351,13 @@ export async function deleteTodo({
 
 export const mapOrderToEmailPayload = (
   order: IOrder,
-  role: "buyer" | "merchant"
+  store: IStoreDetails
 ) => ({
   buyerName: order.shippingAddress.fullName,
-  // merchantName: order.storeName,
+  merchantName: store.businessName,
+  storeColor: store.storeColor,
+  storeLogo: store.logoUrl,
+  storeEmail: store.businessEmail,
   orderNumber: order.orderNumber,
   orderDate: new Date(order.createdAt).toLocaleString(),
   orderStatus: order.status,
