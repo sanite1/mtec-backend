@@ -21,6 +21,7 @@ import {
 import { Todo } from "../models/todo";
 import { Payment, Wallet } from "../models/payment";
 import {
+  sendOrderCanceledMail,
   sendOrderShippingStatusMail,
   sendPaymentConfirmedMail,
   sendPaymentConfirmedMerchantMail,
@@ -443,6 +444,12 @@ export const cancelOrderService = async (id: string) => {
     const order = await Order.findById(id).session(session);
     if (!order) throw new ApiError(404, "Order not found");
 
+    const user = await User.findById(order.userId).session(session);
+    if (!user) throw new ApiError(404, "User not found");
+
+    const store = await Store.findById(user.storeId).session(session);
+    if (!store) throw new ApiError(404, "Store not found");
+
     if (order.status === "cancelled") {
       throw new ApiError(400, "Order is already cancelled");
     }
@@ -582,6 +589,11 @@ export const cancelOrderService = async (id: string) => {
         "metadata.orderId": String(savedOrder._id),
         type: "order_needs_shipping",
       });
+    });
+
+    await sendOrderCanceledMail({
+      email: user.email || "",
+      data: mapOrderToEmailPayload(order, store),
     });
 
     // 4️⃣ Commit transaction

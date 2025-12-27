@@ -222,6 +222,28 @@ export const sendOrderShippingStatusMail = async ({
   }
 };
 
+export const sendOrderCanceledMail = async ({
+  email,
+  data,
+}: {
+  email: string;
+  data: any;
+}) => {
+  const mailOptions = {
+    from: `"${data.merchantName}" <${process.env.AUTH_EMAIL}>`,
+    to: email,
+    subject: `${data.orderNumber} - Order Cancelled`,
+    template: "./order-canceled",
+    context: { ...data, currentYear: new Date().getFullYear() },
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new ApiError(500, `Error sending order canceled: ${error}`);
+  }
+};
+
 export const sendInvoiceMail = async (
   file: { path: string; filename: string },
   email: string,
