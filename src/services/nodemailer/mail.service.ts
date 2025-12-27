@@ -126,6 +126,53 @@ export const sendOrderPendingPaymentMerchantMail = async ({
   }
 };
 
+export const sendPaymentConfirmedMail = async ({
+  email,
+  data,
+}: {
+  email: string;
+  data: any;
+}) => {
+  const mailOptions = {
+    from: `"${data.merchantName}" <${process.env.AUTH_EMAIL}>`,
+    to: email,
+    subject: `${data.orderNumber} - Payment Confirmed`,
+    template: "./payment-confirmed",
+    context: data,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new ApiError(500, `Error sending payment confirmed email: ${error}`);
+  }
+};
+
+export const sendPaymentConfirmedMerchantMail = async ({
+  email,
+  data,
+}: {
+  email: string;
+  data: any;
+}) => {
+  const mailOptions = {
+    from: `"${data.merchantName}" <${process.env.AUTH_EMAIL}>`,
+    to: email,
+    subject: `${data.orderNumber} - Payment Confirmed`,
+    template: "./payment-confirmed-merchant",
+    context: data,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new ApiError(
+      500,
+      `Error sending payment confirmed email to merchant: ${error}`
+    );
+  }
+};
+
 export const sendInvoiceMail = async (
   file: { path: string; filename: string },
   email: string,

@@ -16,9 +16,15 @@ import {
   createLowStockTodo,
   createOrderPendingPaymentTodo,
   createOrderShippingTodo,
+  mapOrderToEmailPayload,
 } from "./todo.service";
 import { Todo } from "../models/todo";
 import { Payment, Wallet } from "../models/payment";
+import {
+  sendPaymentConfirmedMail,
+  sendPaymentConfirmedMerchantMail,
+} from "./nodemailer/mail.service";
+import { Store } from "../models/store.model";
 
 export const createOrderService = async (data: CreateOrderRequest) => {
   const session = await mongoose.startSession();
@@ -244,11 +250,22 @@ export const createOrderService = async (data: CreateOrderRequest) => {
       }
     }
 
+    const store = await Store.findById(user.storeId).session(session);
+    if (!store) throw new ApiError(404, "Store not found");
+
     // 6️⃣ Commit & return
     await session.commitTransaction();
     session.endSession();
 
     if (order.paymentStatus === "paid") {
+      await sendPaymentConfirmedMail({
+        email: order.shippingAddress.email || "",
+        data: mapOrderToEmailPayload(order, store),
+      });
+      await sendPaymentConfirmedMerchantMail({
+        email: user.email || "",
+        data: mapOrderToEmailPayload(order, store),
+      });
       await createOrderShippingTodo({
         userId: data.userId,
         orderId: String(order._id),
@@ -808,6 +825,12 @@ export const updateOrderPaymentService = async (
     const order = await Order.findById(id).session(session);
     if (!order) throw new ApiError(404, "Order not found");
 
+    const user = await User.findById(order.userId).session(session);
+    if (!user) throw new ApiError(404, "User not found");
+
+    const store = await Store.findById(user.storeId).session(session);
+    if (!store) throw new ApiError(404, "Store not found");
+
     const oldPaymentStatus = order.paymentStatus;
     if (oldPaymentStatus === paymentStatus) {
       throw new ApiError(400, `Order payment is already ${paymentStatus}`);
@@ -992,6 +1015,15 @@ export const updateOrderPaymentService = async (
           userId: String(savedOrder.userId),
           orderId: String(savedOrder._id),
           orderName: savedOrder.orderNumber,
+        });
+
+        await sendPaymentConfirmedMail({
+          email: savedOrder.shippingAddress.email || "",
+          data: mapOrderToEmailPayload(savedOrder, store),
+        });
+        await sendPaymentConfirmedMerchantMail({
+          email: user.email || "",
+          data: mapOrderToEmailPayload(savedOrder, store),
         });
         const payment = await Payment.findOne({ orderId: order._id }).session(
           session

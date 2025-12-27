@@ -358,8 +358,10 @@ export const mapOrderToEmailPayload = (
   storeColor: store.storeColor,
   storeLogo: store.logoUrl,
   storeEmail: store.businessEmail,
+  storeLink: store.storeLink,
   orderNumber: order.orderNumber,
   orderDate: new Date(order.createdAt).toLocaleString(),
+  paymentDate: new Date(order.createdAt).toLocaleString(),
   orderStatus: order.status,
   paymentStatus: order.paymentStatus,
   paymentMethod: order.paymentMethod.replace("_", " "),
@@ -387,5 +389,6 @@ export const mapOrderToEmailPayload = (
     discount: `₦${order.discount?.toLocaleString()}`,
     total: `₦${order.total?.toLocaleString()}`,
   },
-  orderUrl: `${process.env.DOMAIN_NAME}/orders/${order._id}`,
+  orderUrl: `${store.storeLink}/orders/${order._id}`,
+  adminOrderUrl: `${process.env.DOMAIN_NAME}/orders/${order._id}`,
 });
