@@ -4,7 +4,7 @@ import {
 } from "../interfaces/product.interface";
 import ApiResponse from "../errors/apiResponse";
 import { Product, ProductHistory, ProductVariation } from "../models/product";
-import mongoose, { FilterQuery, Types } from "mongoose";
+import mongoose, { FilterQuery, PipelineStage, Types } from "mongoose";
 import { ProductFilterParams } from "../interfaces/product.interface";
 import ApiError from "../errors/apiError";
 import User from "../models/User";
@@ -102,30 +102,73 @@ export const getProductsByUserService = async ({
   page = 1,
   limit = 10,
 }: ProductFilterParams) => {
-  const filters: any = { userId };
+  try {
+    const match: any = { userId: new Types.ObjectId(userId) };
 
-  if (location) filters.locationName = location.trim();
-  if (category) filters.category = category;
-  if (category) filters.category = category;
-  if (search) filters.name = { $regex: search, $options: "i" }; // case-insensitive search
-  if (typeof isActive === "boolean") filters.isActive = isActive;
+    if (location) match.locationName = location.trim();
+    if (category) match.category = category;
+    if (search) match.name = { $regex: search, $options: "i" };
+    if (typeof isActive === "boolean") match.isActive = isActive;
 
-  const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-  const [products, total] = await Promise.all([
-    Product.find(filters).skip(skip).limit(limit).sort({ createdAt: -1 }),
-    Product.countDocuments(filters),
-  ]);
+    const pipeline: PipelineStage[] = [
+      { $match: match },
+      {
+        $sort: {
+          createdAt: -1 as const,
+        },
+      },
+      {
+        $lookup: {
+          from: "productvariations",
+          localField: "_id",
+          foreignField: "productId",
+          as: "variations",
+        },
+      },
+      {
+        $facet: {
+          data: [{ $skip: skip }, { $limit: limit }],
+          totalCount: [{ $count: "count" }],
+        },
+      },
+    ];
 
-  // if (!products.length) {
-  //   throw new ApiError(404, "No products found for this user");
-  // }
-  return new ApiResponse(200, "Products Retrieved Successfully", {
-    total,
-    currentPage: page,
-    totalPages: Math.ceil(total / limit),
-    products,
-  });
+    const result = await Product.aggregate(pipeline);
+
+    // 🛑 Defensive checks
+    if (!result || !result.length) {
+      return new ApiResponse(200, "Products Retrieved Successfully", {
+        total: 0,
+        currentPage: page,
+        totalPages: 0,
+        products: [],
+      });
+    }
+
+    const products = result[0]?.data || [];
+    const total = result[0]?.totalCount?.[0]?.count || 0;
+
+    return new ApiResponse(200, "Products Retrieved Successfully", {
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      products,
+    });
+  } catch (error: any) {
+    // ❗ Structured error logging
+    console.error("❌ getProductsByUserService failed", {
+      message: error.message,
+      stack: error.stack,
+      userId,
+      page,
+      limit,
+    });
+
+    // Let your global error handler catch this
+    throw new Error("Failed to retrieve products");
+  }
 };
 
 export const getSingleProductService = async (

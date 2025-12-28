@@ -119,7 +119,6 @@ export const createOrderPendingPaymentTodo = async ({
       email: order?.shippingAddress?.email || "",
       data: mapOrderToEmailPayload(order, store),
     });
-    console.log(merchant);
 
     // Merchant email
     await sendOrderPendingPaymentMerchantMail({
