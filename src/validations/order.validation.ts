@@ -124,3 +124,10 @@ export const updateShippingStatusValidation = () =>
         .required(),
     }),
   });
+
+export const requestPaymentValidation = () =>
+  validate({
+    params: Joi.object({
+      id: Joi.string().required(),
+    }),
+  });

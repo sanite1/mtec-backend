@@ -5,6 +5,7 @@ import {
   getOrderByIdService,
   getOrderStatsService,
   getOrdersService,
+  requestPaymentService,
   updateOrderPaymentService,
   updateOrderShippingService,
   updateOrderStatusService,
@@ -158,6 +159,21 @@ export const updateOrderShippingController = async (
     const { shippingStatus } = req.body;
 
     const result = await updateOrderShippingService(id, shippingStatus);
+    res.status(result.statusCode).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const requestPaymentController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params;
+
+    const result = await requestPaymentService(id);
     res.status(result.statusCode).json(result);
   } catch (error) {
     next(error);

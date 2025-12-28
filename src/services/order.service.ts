@@ -22,6 +22,7 @@ import { Todo } from "../models/todo";
 import { Payment, Wallet } from "../models/payment";
 import {
   sendOrderCanceledMail,
+  sendOrderPendingPaymentBuyerMail,
   sendOrderShippingStatusMail,
   sendPaymentConfirmedMail,
   sendPaymentConfirmedMerchantMail,
@@ -1144,6 +1145,38 @@ export const updateOrderShippingService = async (
     session.endSession();
 
     return new ApiResponse(200, "Shipping status updated successfully", order);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+export const requestPaymentService = async (id: string) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // 1️⃣ Find the order
+    const order = await Order.findById(id).session(session);
+    if (!order) throw new ApiError(404, "Order not found");
+
+    const user = await User.findById(order.userId).session(session);
+    if (!user) throw new ApiError(404, "User not found");
+
+    const store = await Store.findById(user.storeId).session(session);
+    if (!store) throw new ApiError(404, "Store not found");
+
+    // Buyer email
+    await sendOrderPendingPaymentBuyerMail({
+      email: order?.shippingAddress?.email || "",
+      data: mapOrderToEmailPayload(order, store),
+    });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return new ApiResponse(200, "Mail Sent Successfully");
   } catch (error) {
     await session.abortTransaction();
     session.endSession();

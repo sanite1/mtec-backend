@@ -5,6 +5,7 @@ import {
   getOrderByIdController,
   getOrderStatsController,
   getOrders,
+  requestPaymentController,
   updateOrderPaymentController,
   updateOrderShippingController,
   updateOrderStatusController,
@@ -15,6 +16,7 @@ import {
   getOrderStatsValidation,
   getOrdersValidation,
   getSingleOrderValidation,
+  requestPaymentValidation,
   updateOrderStatusValidation,
   updatePaymentStatusValidation,
   updateShippingStatusValidation,
@@ -58,6 +60,10 @@ router
     updateShippingStatusValidation(),
     updateOrderShippingController
   );
+
+router
+  .route("/:id/request-payment")
+  .patch(isAuthenticated, requestPaymentValidation(), requestPaymentController);
 
 router
   .route("/:id")

@@ -354,47 +354,55 @@ export async function deleteTodo({
   }
 }
 
-export const mapOrderToEmailPayload = (
-  order: IOrder,
-  store: IStoreDetails
-) => ({
-  buyerName: order.shippingAddress.fullName,
-  merchantName: store.businessName,
-  storeColor: store.storeColor,
-  storeLogo: store.logoUrl,
-  storeEmail: store.businessEmail,
-  storeLink: store.storeLink,
-  orderNumber: order.orderNumber,
-  orderDate: new Date(order.createdAt).toLocaleString(),
-  paymentDate: new Date(order.createdAt).toLocaleString(),
-  orderStatus: order.status,
-  paymentStatus: order.paymentStatus,
-  shippingStatus: order.shippingStatus,
-  paymentMethod: order.paymentMethod.replace("_", " "),
-  shipping: {
-    fullName: order.shippingAddress.fullName,
-    phone: order.shippingAddress.phone,
-    email: order.shippingAddress.email,
-    address1: order.shippingAddress.addressLine1,
-    address2: order.shippingAddress.addressLine2,
-    city: order.shippingAddress.city,
-    state: order.shippingAddress.state,
-    country: order.shippingAddress.country,
-  },
-  items: order.items.map((item: any) => ({
-    name: item.name,
-    sku: item.sku,
-    quantity: item.quantity,
-    price: `₦${item.price?.toLocaleString()}`,
-    subtotal: `₦${item.subtotal?.toLocaleString()}`,
-  })),
-  totals: {
-    subtotal: `₦${order.subtotal?.toLocaleString()}`,
-    shipping: `₦${order.shippingFee?.toLocaleString()}`,
-    tax: `₦${order.tax?.toLocaleString()}`,
-    discount: `₦${order.discount?.toLocaleString()}`,
-    total: `₦${order.total?.toLocaleString()}`,
-  },
-  orderUrl: `${store.storeLink}/orders/${order._id}`,
-  adminOrderUrl: `${process.env.DOMAIN_NAME}/orders/${order._id}`,
-});
+export const mapOrderToEmailPayload = (order: IOrder, store: IStoreDetails) => {
+  const baseUrl =
+    process.env.NODE_ENV === "production"
+      ? store.storeLink
+      : `http://localhost:3001/${store.slug}`;
+  const baseUrl2 =
+    process.env.NODE_ENV === "production"
+      ? process.env.DOMAIN_NAME
+      : `http://localhost:3000`;
+
+  return {
+    buyerName: order.shippingAddress.fullName,
+    merchantName: store.businessName,
+    storeColor: store.storeColor,
+    storeLogo: store.logoUrl,
+    storeEmail: store.businessEmail,
+    storeLink: store.storeLink,
+    orderNumber: order.orderNumber,
+    orderDate: new Date(order.createdAt).toLocaleString(),
+    paymentDate: new Date(order.createdAt).toLocaleString(),
+    orderStatus: order.status,
+    paymentStatus: order.paymentStatus,
+    shippingStatus: order.shippingStatus,
+    paymentMethod: order.paymentMethod.replace("_", " "),
+    shipping: {
+      fullName: order.shippingAddress.fullName,
+      phone: order.shippingAddress.phone,
+      email: order.shippingAddress.email,
+      address1: order.shippingAddress.addressLine1,
+      address2: order.shippingAddress.addressLine2,
+      city: order.shippingAddress.city,
+      state: order.shippingAddress.state,
+      country: order.shippingAddress.country,
+    },
+    items: order.items.map((item: any) => ({
+      name: item.name,
+      sku: item.sku,
+      quantity: item.quantity,
+      price: `₦${item.price?.toLocaleString()}`,
+      subtotal: `₦${item.subtotal?.toLocaleString()}`,
+    })),
+    totals: {
+      subtotal: `₦${order.subtotal?.toLocaleString()}`,
+      shipping: `₦${order.shippingFee?.toLocaleString()}`,
+      tax: `₦${order.tax?.toLocaleString()}`,
+      discount: `₦${order.discount?.toLocaleString()}`,
+      total: `₦${order.total?.toLocaleString()}`,
+    },
+    orderUrl: `${baseUrl}/order-details/${order._id}`,
+    adminOrderUrl: `${baseUrl2}/orders/${order._id}`,
+  };
+};
