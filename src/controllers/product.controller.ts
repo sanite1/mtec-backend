@@ -3,6 +3,7 @@ import {
   adjustProductQuantityService,
   createProductService,
   deleteProductService,
+  getFullProductStatsService,
   getProductHistoryService,
   getProductsByUserService,
   getSingleProductService,
@@ -196,6 +197,22 @@ export const resetProductHistory = async (
     const result = await resetProductHistoryService(id);
 
     return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getProductStatsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await getFullProductStatsService(userId);
+
+    res.status(result.statusCode).json(result);
   } catch (error) {
     next(error);
   }

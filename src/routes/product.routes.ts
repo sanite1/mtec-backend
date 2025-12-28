@@ -4,6 +4,7 @@ import {
   createProduct,
   deleteProduct,
   getProductHistory,
+  getProductStatsController,
   getProductsByUser,
   getSingleProduct,
   resetProductHistory,
@@ -15,6 +16,7 @@ import {
   createProductValidation,
   deleteProductValidation,
   getProductHistoryValidation,
+  getProductStatsValidation,
   getProductsValidation,
   getSingleProductValidation,
   resetProductHistoryValidation,
@@ -38,6 +40,10 @@ router
 router
   .route("/:userId")
   .get(isAuthenticated, getProductsValidation(), getProductsByUser);
+
+router
+  .route("/stats/:userId")
+  .get(isAuthenticated, getProductStatsValidation(), getProductStatsController);
 
 router
   .route("/user-storefront/:userId")

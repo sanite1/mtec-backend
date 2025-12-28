@@ -4,7 +4,7 @@ import {
 } from "../interfaces/product.interface";
 import ApiResponse from "../errors/apiResponse";
 import { Product, ProductHistory, ProductVariation } from "../models/product";
-import mongoose, { FilterQuery } from "mongoose";
+import mongoose, { FilterQuery, Types } from "mongoose";
 import { ProductFilterParams } from "../interfaces/product.interface";
 import ApiError from "../errors/apiError";
 import User from "../models/User";
@@ -660,5 +660,126 @@ export const resetProductHistoryService = async (productId: string) => {
   return new ApiResponse(200, "Product history cleared successfully", {
     productId,
     deletedCount: deletedCount.deletedCount || 0,
+  });
+};
+
+export const getProductStatsService = async (userId: string) => {
+  // 1) Ensure user exists
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  // 2) Aggregate product stats
+  const result = await Product.aggregate([
+    {
+      $match: { userId: new Types.ObjectId(userId) },
+    },
+    {
+      $group: {
+        _id: null,
+        totalProducts: { $sum: 1 },
+        activeProducts: {
+          $sum: { $cond: [{ $eq: ["$isActive", true] }, 1, 0] },
+        },
+        inactiveProducts: {
+          $sum: { $cond: [{ $eq: ["$isActive", false] }, 1, 0] },
+        },
+        totalStock: { $sum: { $ifNull: ["$totalStock", 0] } },
+      },
+    },
+  ]);
+
+  const stats = result[0] || {
+    totalProducts: 0,
+    activeProducts: 0,
+    inactiveProducts: 0,
+    totalStock: 0,
+  };
+
+  return new ApiResponse(200, "Product statistics retrieved successfully", {
+    totalProducts: stats.totalProducts,
+    activeProducts: stats.activeProducts,
+    inactiveProducts: stats.inactiveProducts,
+    totalStock: stats.totalStock,
+  });
+};
+
+export const getProductRetailValueService = async (userId: string) => {
+  // Ensure user exists
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const result = await ProductVariation.aggregate([
+    // Join products to access userId
+    {
+      $lookup: {
+        from: "products",
+        localField: "productId",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    { $unwind: "$product" },
+
+    // Filter by merchant
+    {
+      $match: {
+        "product.userId": new Types.ObjectId(userId),
+      },
+    },
+
+    // Compute retail & cost values
+    {
+      $group: {
+        _id: null,
+        totalRetailValue: {
+          $sum: {
+            $multiply: [
+              "$stock",
+              {
+                $cond: [
+                  { $ifNull: ["$discountPrice", false] },
+                  "$discountPrice",
+                  "$price",
+                ],
+              },
+            ],
+          },
+        },
+        totalCostValue: {
+          $sum: {
+            $multiply: ["$stock", { $ifNull: ["$costPrice", 0] }],
+          },
+        },
+        totalVariationStock: { $sum: "$stock" },
+      },
+    },
+  ]);
+
+  const stats = result[0] || {
+    totalRetailValue: 0,
+    totalCostValue: 0,
+    totalVariationStock: 0,
+  };
+
+  return new ApiResponse(
+    200,
+    "Product value statistics retrieved successfully",
+    {
+      totalRetailValue: stats.totalRetailValue,
+      totalCostValue: stats.totalCostValue,
+      totalVariationStock: stats.totalVariationStock,
+    }
+  );
+};
+
+export const getFullProductStatsService = async (userId: string) => {
+  const [productStats, valueStats] = await Promise.all([
+    getProductStatsService(userId),
+    getProductRetailValueService(userId),
+  ]);
+
+  return new ApiResponse(200, "Product dashboard stats retrieved", {
+    ...productStats.data,
+    ...valueStats.data,
   });
 };

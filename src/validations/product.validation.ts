@@ -179,3 +179,10 @@ export const resetProductHistoryValidation = () =>
       }),
     }),
   });
+
+export const getProductStatsValidation = () =>
+  validate({
+    params: Joi.object({
+      userId: Joi.string().required(),
+    }),
+  });
