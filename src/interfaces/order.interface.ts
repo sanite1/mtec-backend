@@ -58,6 +58,7 @@ export interface CreateOrderRequest {
   paymentStatus?: PaymentStatus; // 'paid' => will decrement stock and log sale
   paymentMethod?: PaymentMethod;
   orderStatus?: OrderStatus;
+  shippingStatus?: shippingStatus;
 }
 
 export interface GetOrdersParams {

@@ -13,6 +13,7 @@ export const getTaxesService = async ({
   page = 1,
   limit = 20,
   search,
+  location,
   startDate,
   endDate,
 }: GetTaxesParams) => {
@@ -39,6 +40,9 @@ export const getTaxesService = async ({
       $gte: new Date(startDate),
       $lte: new Date(endDate),
     };
+  }
+  if (location) {
+    filters.locationName = { $regex: location, $options: "i" };
   }
 
   const skip = (currentPage - 1) * perPage;

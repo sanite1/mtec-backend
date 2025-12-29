@@ -42,6 +42,9 @@ export const createOrderValidation = () =>
       orderStatus: Joi.string()
         .valid("pending", "completed", "cancelled", "refunded")
         .optional(),
+      shippingStatus: Joi.string()
+        .valid("pending", "processing", "delivered", "shipped")
+        .optional(),
     }),
   });
 

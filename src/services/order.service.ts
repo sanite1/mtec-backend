@@ -122,7 +122,12 @@ export const createOrderService = async (data: CreateOrderRequest) => {
         : undefined,
       userId: data.userId,
       status: data.orderStatus || "pending",
-      shippingStatus: data.paymentStatus === "paid" ? "processing" : "pending",
+      ...(data.channel === "physical"
+        ? { shippingStatus: data.shippingStatus }
+        : {
+            shippingStatus:
+              data.paymentStatus === "paid" ? "processing" : "pending",
+          }),
       paymentStatus: data.paymentStatus || "unpaid",
       paymentMethod: data.paymentMethod || "other",
       items: itemsProcessed,
