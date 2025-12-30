@@ -29,6 +29,7 @@ import {
 } from "./nodemailer/mail.service";
 import { Store } from "../models/store.model";
 import { createOrGetCustomer } from "./customer.service";
+import { IProductVariation } from "../interfaces/product.interface";
 
 export const createOrderService = async (data: CreateOrderRequest) => {
   const session = await mongoose.startSession();
@@ -56,7 +57,7 @@ export const createOrderService = async (data: CreateOrderRequest) => {
       const product = await Product.findById(productId).session(session);
       if (!product) throw new ApiError(404, `Product not found: ${productId}`);
 
-      let variation: any = null;
+      let variation: IProductVariation | null = null;
       if (variationId) {
         variation =
           await ProductVariation.findById(variationId).session(session);
@@ -76,8 +77,8 @@ export const createOrderService = async (data: CreateOrderRequest) => {
       if (price === null)
         throw new ApiError(400, `No price defined for product ${productId}`);
 
-      const willDeductStock =
-        data.paymentStatus === "paid" || data.orderStatus === "completed";
+      const willDeductStock = true;
+      // data.paymentStatus === "paid" || data.orderStatus === "completed";
 
       if (willDeductStock) {
         const availableStock = variation
@@ -86,7 +87,7 @@ export const createOrderService = async (data: CreateOrderRequest) => {
         if (availableStock < quantity) {
           throw new ApiError(
             400,
-            `Insufficient stock for ${variation ? `variation ${variationId}` : `product ${productId}`} (requested ${quantity}, available ${availableStock})`
+            `Insufficient stock for ${variation ? `variation ${variation.name}` : `product ${product.name}`} (requested ${quantity}, available ${availableStock})`
           );
         }
       }
@@ -256,8 +257,13 @@ export const createOrderService = async (data: CreateOrderRequest) => {
       if (payment.status === "paid") {
         const wallet = await Wallet.findOne({ userId: order.userId });
         if (wallet) {
-          wallet.pendingBalance += order.total;
-          await wallet.save();
+          if (order.shippingStatus === "delivered") {
+            wallet.offlineTransaction += order.total;
+            await wallet.save();
+          } else {
+            wallet.pendingBalance += order.total;
+            await wallet.save();
+          }
         }
       }
     }
@@ -278,11 +284,18 @@ export const createOrderService = async (data: CreateOrderRequest) => {
         email: user.email || "",
         data: mapOrderToEmailPayload(order, store),
       });
-      await createOrderShippingTodo({
-        userId: data.userId,
-        orderId: String(order._id),
-        orderName: order.orderNumber,
-      });
+      if (order.shippingStatus !== "delivered") {
+        await createOrderShippingTodo({
+          userId: data.userId,
+          orderId: String(order._id),
+          orderName: order.orderNumber,
+        });
+      } else {
+        await sendOrderShippingStatusMail({
+          email: order.shippingAddress.email || "",
+          data: mapOrderToEmailPayload(order, store),
+        });
+      }
     } else {
       await createOrderPendingPaymentTodo({
         userId: data.userId,

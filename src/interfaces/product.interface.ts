@@ -21,6 +21,7 @@ export interface IProduct {
 }
 
 export interface IProductVariation {
+  _id?: Types.ObjectId;
   productId: Types.ObjectId;
   name: string;
   sku: string;
