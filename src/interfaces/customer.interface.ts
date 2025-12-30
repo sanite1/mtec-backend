@@ -1,4 +1,5 @@
 import { Types } from "mongoose";
+import { ShippingAddress } from "./order.interface";
 
 export interface ICustomer {
   userId: Types.ObjectId; // store owner
@@ -53,4 +54,9 @@ export interface GetCustomerOrdersParams {
   search?: string;
   startDate?: string;
   endDate?: string;
+}
+
+export interface CreateOrGetCustomerInput {
+  userId: string;
+  shipping: ShippingAddress;
 }

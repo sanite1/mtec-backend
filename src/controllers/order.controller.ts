@@ -49,12 +49,14 @@ export const getOrders: ExpresFunction = async (
       search,
       startDate,
       endDate,
+      customerId,
     } = req.query;
 
     const { userId } = req.params;
 
     const data = await getOrdersService({
       userId,
+      customerId: customerId as string,
       page: Number(page),
       limit: Number(limit),
       status: status as string,

@@ -28,6 +28,7 @@ import {
   sendPaymentConfirmedMerchantMail,
 } from "./nodemailer/mail.service";
 import { Store } from "../models/store.model";
+import { createOrGetCustomer } from "./customer.service";
 
 export const createOrderService = async (data: CreateOrderRequest) => {
   const session = await mongoose.startSession();
@@ -40,6 +41,11 @@ export const createOrderService = async (data: CreateOrderRequest) => {
     if (!Array.isArray(data.items) || data.items.length === 0) {
       throw new ApiError(400, "Order must contain at least one item");
     }
+
+    const customerId = await createOrGetCustomer({
+      userId: data.userId,
+      shipping: data.shippingAddress,
+    });
 
     const itemsProcessed: any[] = [];
     let subtotal = 0;
@@ -117,9 +123,7 @@ export const createOrderService = async (data: CreateOrderRequest) => {
     // 4️⃣ Create order
     const orderDoc = {
       orderNumber,
-      customerId: data.customerId
-        ? new mongoose.Types.ObjectId(data.customerId)
-        : undefined,
+      customerId,
       userId: data.userId,
       status: data.orderStatus || "pending",
       ...(data.channel === "physical"
@@ -300,6 +304,7 @@ export const getOrdersService = async ({
   page = 1,
   limit = 20,
   status,
+  customerId,
   paymentStatus,
   paymentMethod,
   search,
@@ -318,6 +323,7 @@ export const getOrdersService = async ({
   if (status) filters.status = status;
   filters.userId = userId;
   if (paymentStatus) filters.paymentStatus = paymentStatus;
+  if (customerId) filters.customerId = customerId;
   if (paymentMethod) filters.paymentMethod = paymentMethod;
 
   if (startDate && endDate) {

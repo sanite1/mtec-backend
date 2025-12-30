@@ -63,6 +63,7 @@ export interface CreateOrderRequest {
 
 export interface GetOrdersParams {
   userId: string;
+  customerId?: string;
   page?: number;
   limit?: number;
   status?: string;

@@ -66,6 +66,7 @@ export const getOrdersValidation = () =>
         .valid("card", "bank_transfer", "cash", "other")
         .optional(),
       search: Joi.string().allow("", null).optional(), // orderNumber or customer name
+      customerId: Joi.string().allow("", null).optional(), // orderNumber or customer name
       startDate: Joi.date().optional(),
       endDate: Joi.date().optional(),
     }),

@@ -1,7 +1,9 @@
+import { Types } from "mongoose";
 import ApiError from "../errors/apiError";
 import ApiResponse from "../errors/apiResponse";
 import {
   CreateCustomerRequest,
+  CreateOrGetCustomerInput,
   GetCustomerOrdersParams,
   GetCustomersParams,
   UpdateNewsletterParams,
@@ -332,3 +334,63 @@ export const getCustomerStatsService = async (userId: string) => {
     recentCustomers,
   });
 };
+
+function splitFullName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" ") || parts[0],
+  };
+}
+
+export async function createOrGetCustomer({
+  userId,
+  shipping,
+}: CreateOrGetCustomerInput): Promise<Types.ObjectId> {
+  const { email, phone, fullName, addressLine1, city, state, country } =
+    shipping;
+
+  if (!email) {
+    throw new Error("Customer email is required to create an order");
+  }
+
+  // 1️⃣ Check if customer already exists
+  const existingCustomer = await Customer.findOne({
+    userId,
+    email: email.toLowerCase(),
+  });
+
+  if (existingCustomer) {
+    return existingCustomer._id;
+  }
+
+  // 2️⃣ Split name
+  const { firstName, lastName } = splitFullName(fullName);
+
+  // 3️⃣ Create new customer
+  const customer = await Customer.create({
+    userId,
+    firstName,
+    lastName,
+    phone,
+    email: email.toLowerCase(),
+
+    shipping: {
+      address: addressLine1,
+      country,
+      state,
+      city,
+    },
+
+    billing: {
+      sameAsShipping: true,
+      address: addressLine1,
+      country,
+      state,
+      city,
+    },
+  });
+
+  return customer._id;
+}
