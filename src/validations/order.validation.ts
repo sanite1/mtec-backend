@@ -135,3 +135,10 @@ export const requestPaymentValidation = () =>
       id: Joi.string().required(),
     }),
   });
+
+export const getOrderInvoiceValidation = () =>
+  validate({
+    params: Joi.object({
+      orderId: Joi.string().required(),
+    }),
+  });

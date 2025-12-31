@@ -44,6 +44,7 @@ const shippingAddressSchema = new Schema<ShippingAddress>(
 const orderSchema = new Schema(
   {
     orderNumber: { type: String, required: true, unique: true },
+    invoicePath: { type: String, unique: true },
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     customerId: {
       type: Schema.Types.ObjectId,

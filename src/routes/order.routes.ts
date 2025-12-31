@@ -13,6 +13,7 @@ import {
 import {
   cancelOrderValidation,
   createOrderValidation,
+  getOrderInvoiceValidation,
   getOrderStatsValidation,
   getOrdersValidation,
   getSingleOrderValidation,
@@ -23,6 +24,7 @@ import {
 } from "../validations/order.validation";
 // optionally add isAuthenticated middleware if you want only logged-in users to create orders
 import { isAuthenticated } from "../middlewares/authenticatedMiddleWare";
+import { downloadInvoice } from "../controllers/invoice.controller";
 
 const router = Router();
 
@@ -36,6 +38,10 @@ router
 router
   .route("/all/:userId")
   .get(isAuthenticated, getOrdersValidation(), getOrders);
+
+router
+  .route("/:orderId/invoice")
+  .post(isAuthenticated, getOrderInvoiceValidation(), downloadInvoice);
 
 router
   .route("/:id/status")

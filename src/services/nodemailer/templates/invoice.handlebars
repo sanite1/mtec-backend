@@ -1,0 +1,227 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Invoice</title>
+  </head>
+
+  <body
+    style="
+      margin:0;
+      padding:0;
+      background:#ffffff;
+      font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding:40px;
+    "
+  >
+    <div style="min-height: 100vh; display: flex; flex-direction: column;">
+      <div style="flex: 1;">
+        <!-- ALL INVOICE CONTENT HERE -->
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td align="center">
+
+              <!-- CONTAINER -->
+              <div
+                style="
+              background:#ffffff;
+              border-radius:8px;
+            "
+              >
+
+                <!-- HEADER -->
+                <tr>
+                  <td>
+                    <table width="100%">
+                      <tr>
+                        <td>
+                          <img src="{{storeLogo}}" height="40" />
+                          <div
+                            style="font-size:14px; color:#666; margin-top: 10px"
+                          >{{merchantName}}</div>
+                        </td>
+                        <td align="right" style="font-size:14px; color:#333;">
+                          <div><strong>Invoice No:</strong>
+                            {{orderNumber}}</div>
+                          <div><strong>Order Date:</strong> {{orderDate}}</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr><td height="20"></td></tr>
+
+                <!-- INVOICE TITLE -->
+                <tr>
+                  <td>
+                    <table width="100%">
+                      <tr>
+                        <td width="60%">
+                          <strong style="font-size:15px;">Invoice To:</strong><br
+                          />
+                          <span
+                            style="font-size:16px; font-weight:bold;"
+                          >{{shipping.fullName}}</span><br />
+                          <span style="color:#555; font-size:14px;">
+                            {{shipping.address1}}<br />
+                            {{shipping.city}},
+                            {{shipping.state}}<br />
+                            {{shipping.phone}}<br />
+                            {{shipping.email}}
+                          </span>
+                        </td>
+                        <td align="right">
+                          <h1
+                            style="margin:0; font-size:42px; color:#222;"
+                          >Invoice</h1>
+                          <div style="margin-top:5px;">
+                            <strong>Total Due:</strong>
+                            <span
+                              style="font-size:20px;"
+                            >{{totals.total}}</span>
+                            <!-- PAY BUTTON -->
+                            {{#unless isPaid}}
+                              <tr>
+                                <td
+                                  align="left"
+                                  style="padding-top:5px; font-size: xx-small;"
+                                >
+                                  <span
+                                    style="color:#dc2626; margin-right:2px;"
+                                  >
+                                    The payment status is unpaid.
+                                  </span>
+                                  <a
+                                    href="{{paymentUrl}}"
+                                    style="color:{{storeColor}};;"
+                                  >
+                                    Pay online
+                                  </a>
+                                </td>
+                              </tr>
+                            {{/unless}}
+
+                          </div>
+
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr><td height="30"></td></tr>
+
+                <!-- ITEMS TABLE -->
+                <tr>
+                  <td>
+                    <table
+                      width="100%"
+                      cellspacing="0"
+                      cellpadding="0"
+                      style="border-collapse:collapse;"
+                    >
+                      <!-- HEADER -->
+                      <tr style="background:{{storeColor}}; color:#fff;">
+                        <th align="left" style="padding:10px;">Description</th>
+                        <th align="center" style="padding:10px;">Qty</th>
+                        <th align="right" style="padding:10px;">Price</th>
+                        <th align="right" style="padding:10px;">Total</th>
+                      </tr>
+
+                      <!-- ITEMS -->
+                      {{#each items}}
+                        <tr
+                          style="border-bottom:1px solid #ddd; page-break-inside: avoid;"
+                        >
+
+                          <td style="padding:15px 10px;">{{name}}</td>
+                          <td
+                            align="center"
+                            style="padding:15px 10px;"
+                          >{{quantity}}</td>
+                          <td
+                            align="right"
+                            style="padding:15px 10px;"
+                          >{{price}}</td>
+                          <td
+                            align="right"
+                            style="padding:15px 10px;"
+                          >{{subtotal}}</td>
+                        </tr>
+                      {{/each}}
+                    </table>
+                  </td>
+
+                </tr>
+
+                <tr><td height="20"></td></tr>
+
+                <!-- TOTALS -->
+                <tr>
+                  <td>
+                    <table width="100%">
+                      <tr>
+                        <td width="60%" class="line-height: 1.5;">
+                          <strong>Payment Method:</strong><br />
+                          <span
+                            class="text-transform: capitalize;"
+                          >{{paymentMethod}}</span>
+                        </td>
+                        <td width="40%">
+                          <table width="100%">
+                            <tr>
+                              <td>Sub Total:</td>
+                              <td align="right">{{totals.subtotal}}</td>
+                            </tr>
+                            {{#if totals.shipping}}
+                              <tr>
+                                <td>Shipping:</td>
+                                <td align="right">{{totals.shipping}}</td>
+                              </tr>
+                            {{/if}}
+                            {{#if totals.tax}}
+                              <tr>
+                                <td>Tax:</td>
+                                <td align="right">{{totals.tax}}</td>
+                              </tr>
+                            {{/if}}
+                            {{#if totals.discount}}
+                              <tr>
+                                <td>Discount:</td>
+                                <td align="right">-{{totals.discount}}</td>
+                              </tr>
+                            {{/if}}
+                            <tr>
+                              <td colspan="2">
+                                <div
+                                  style="margin-top:10px; padding:12px; background:{{storeColor}}; color:#fff; font-weight:bold;"
+                                >
+                                  Total:
+                                  {{totals.total}}
+                                </div>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr><td height="40"></td></tr>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- FOOTER -->
+      <div style="font-size:14px; color:#555; line-height:1.5;">
+        Thank you for your purchase!<br />
+        <strong>{{merchantName}}</strong><br />
+        {{storeEmail}}
+      </div>
+    </div>
+
+  </body>
+</html>

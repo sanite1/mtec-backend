@@ -83,6 +83,7 @@ export type ShippingStatus =
 export interface IOrder extends Document {
   _id: Types.ObjectId;
   orderNumber: string;
+  invoicePath: string;
 
   userId: Types.ObjectId;
   customerId?: Types.ObjectId;
@@ -108,4 +109,21 @@ export interface IOrder extends Document {
 
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface InvoiceData {
+  invoiceNumber: string;
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  items: {
+    name: string;
+    quantity: number;
+    price: number;
+    total: number;
+  }[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  issuedAt: Date;
 }
