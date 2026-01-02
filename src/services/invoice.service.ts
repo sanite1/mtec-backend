@@ -6,6 +6,11 @@ import fs from "fs";
 import path from "path";
 import Handlebars from "handlebars";
 import puppeteer from "puppeteer";
+import puppeteerCore from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
+
+const isProd = process.env.NODE_ENV === "production";
+
 import { UploadApiResponse } from "cloudinary";
 import { cloudinaryImageUpload } from "./cloudinary.service";
 import { IOrder } from "../interfaces/order.interface";
@@ -70,10 +75,15 @@ export const generateInvoicePdf = async ({
     mapOrderToEmailPayload(order, store, isPaid, paymentUrl as string)
   );
 
-  const browser = await puppeteer.launch({
-    headless: "shell",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  const browser = isProd
+    ? await puppeteerCore.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      })
+    : await puppeteer.launch({
+        headless: true,
+      });
 
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: "networkidle0" });
@@ -83,7 +93,7 @@ export const generateInvoicePdf = async ({
     printBackground: true,
     margin: {
       top: "10mm",
-      bottom: "10mm", // space for footer
+      bottom: "15mm",
     },
   });
 
