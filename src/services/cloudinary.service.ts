@@ -31,7 +31,7 @@ cloudinary.config({
 export const cloudinaryImageUpload = (
   imageBuffer: Buffer,
   folder?: string,
-  resource_type?: "image" | "video" | "raw" | "auto" | undefined,
+  resource_type?: "image" | "video" | "raw" | "auto" | undefined
 ): Promise<UploadApiResponse> => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -49,7 +49,7 @@ export const cloudinaryImageUpload = (
         } else {
           if (result) resolve(result);
         }
-      },
+      }
     );
 
     const bufferStream = new Readable();
@@ -61,3 +61,38 @@ export const cloudinaryImageUpload = (
 };
 
 export default cloudinary;
+
+export const cloudinaryPdfUpload = (
+  imageBuffer: Buffer,
+  folder?: string,
+  resource_type?: "image" | "video" | "raw" | "auto" | undefined,
+  public_id?: string
+): Promise<UploadApiResponse> => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        ...(resource_type && {
+          resource_type,
+        }),
+        public_id: public_id,
+        format: "pdf",
+      },
+      // { upload_preset: secret.cloudinary_upload_preset },
+      (error, result) => {
+        if (error) {
+          console.error("Error uploading to Cloudinary:", error);
+          reject(error);
+        } else {
+          if (result) resolve(result);
+        }
+      }
+    );
+
+    const bufferStream = new Readable();
+    bufferStream.push(imageBuffer);
+    bufferStream.push(null);
+
+    bufferStream.pipe(uploadStream);
+  });
+};

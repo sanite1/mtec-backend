@@ -12,7 +12,10 @@ import chromium from "@sparticuz/chromium";
 const isProd = process.env.NODE_ENV === "production";
 
 import { UploadApiResponse } from "cloudinary";
-import { cloudinaryImageUpload } from "./cloudinary.service";
+import {
+  cloudinaryImageUpload,
+  cloudinaryPdfUpload,
+} from "./cloudinary.service";
 import { IOrder } from "../interfaces/order.interface";
 import { IStoreDetails } from "../interfaces/store.interface";
 import { Store } from "../models/store.model";
@@ -27,10 +30,11 @@ export const downloadInvoiceService = async (orderId: string) => {
   const pdfBuffer = await generateInvoicePdf({ order, isPaid, paymentUrl });
 
   // Upload PDF to Cloudinary
-  const result: UploadApiResponse = await cloudinaryImageUpload(
+  const result: UploadApiResponse = await cloudinaryPdfUpload(
     pdfBuffer,
-    "invoices", // folder name
-    "raw" // resource_type for PDFs
+    "invoices",
+    "raw"
+    // `Invoice-${order.orderNumber}`
   );
 
   // Cloudinary URL
